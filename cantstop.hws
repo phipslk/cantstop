@@ -1,0 +1,1228 @@
+@APPTITLE "Can't Stop"
+@APPAUTHOR "Philipp Lonke"
+@APPCOPYRIGHT "(C) Copyright 2026 by Philipp Lonke"
+@APPVERSION "$VER: Can't Stop 0.1 beta"
+@APPDESCRIPTION "A Can't Stop clone"
+
+@DISPLAY {Width = 810, Height = 555, Color = #BLACK, Mode = "Windowed"}
+
+; Soundeffekte vorladen (muessen neben cantstop.hws liegen).
+@SAMPLE 101, "dice.wav"
+@SAMPLE 102, "bust.wav"
+@SAMPLE 103, "win.wav"
+
+; ════════════════════════════════════════════════════════════════════════
+; SPIELFELD-LAYOUT
+; ════════════════════════════════════════════════════════════════════════
+
+columns   = {2, 4, 6, 8, 10, 12, 10, 8, 6, 4, 2}
+maxHeight = 12
+colWidth  = 40
+rowHeight = 40
+startX    = 30
+startY    = 520   ; Unterkante der laengsten Spalte; Feld sitzt oben am Fensterrand
+panelX    = 510
+
+; ── Farben laut Doku (#MAROON statt #BROWN, da #BROWN nicht existiert) ────
+spielerFarben = {}
+spielerFarben[1] = #MAROON
+spielerFarben[2] = #BLUE
+spielerFarben[3] = #GREEN
+spielerFarben[4] = #FUCHSIA
+
+; ── Globaler Spaltenbesitz ────────────────────────────────────────────────
+colOwner = {}
+For colInit = 2 To 12
+	colOwner[colInit] = 0
+Next
+
+; ── Spielzustand ─────────────────────────────────────────────────────────
+nr_player      = 2
+nr_human       = 1              ; Spieler 1..nr_human = Menschen, danach Computer
+isComputer     = {}
+For aiInit = 1 To 4
+	isComputer[aiInit] = False
+Next
+aiThinking     = False          ; True waehrend ein Computer spielt (menschliche Klicks ignorieren)
+; Fortschritt flach ablegen: rowStore[plr*100 + spalte]. Vermeidet die
+; verschachtelte Tabelle Player[plr].Row[spalte], die in Hollywood beim
+; ersten Eintrag (Spieler 1) nicht zuverlaessig persistierte.
+rowStore       = {}
+gameReady      = False
+tempMarker     = {}
+prevTempMarker = {}
+For markerInit = 2 To 12
+	tempMarker[markerInit]     = 0
+	prevTempMarker[markerInit] = 0
+Next
+
+wurf        = {}
+wurfAnzahl  = 0
+gewuerfelt  = False
+currentPl   = 1
+winner      = 0
+buttonCount = 0
+buttonIds   = {}   ; IDs der tatsaechlich erzeugten WAEHLEN-Buttons
+selectedIdx = -1
+phase       = "menu"    ; menu -> regeln -> (Abfrage) -> spielen/bust/ende
+
+; ── Startmenue- und Regeln-Buttons ────────────────────────────────────────
+menuStartId = 40
+menuRulesId = 41
+menuEndId   = 42
+menuBackId  = 43
+menuActive  = False
+backActive  = False
+
+; ── Dedizierte Buttons (feste IDs, getrennt vom WAEHLEN-Bereich 1..3) ──────
+endBtnId      = 99
+quitBtnId     = 98
+endBtnX       = panelX
+endBtnY       = 360
+endBtnW       = 230
+endBtnH       = 28
+endTurnActive = False
+quitActive    = False
+
+; ── Spalten-Auswahl, wenn beim letzten freien Runner zwei Spalten in Frage
+;    kommen (Paar mit zwei verschiedenen, neuen Summen) ────────────────────
+choiceBtnId1  = 21
+choiceBtnId2  = 22
+choiceActive  = False
+choicePending = False   ; blockiert Wuerfeln/Zug-Beenden bis Auswahl getroffen
+choiceCol1    = 0
+choiceCol2    = 0
+
+; ── Primaerer Aktions-Button (kontextabhaengig: Start / Wuerfeln / Setzen
+;    und weiter wuerfeln / Naechster Spieler) ───────────────────────────────
+primaryBtnId  = 30
+primaryActive = False
+primaryBtnX   = panelX
+primaryBtnY   = 400
+primaryBtnW   = 230   ; identisch zu endBtnW ("Setzen und Zug beenden")
+primaryBtnH   = 28
+
+; ── Knopf-Farben (Basis + heller Glanzstreifen oben) ──────────────────────
+btnGreenBase = $2E9E52
+btnGreenLite = $47C56E
+btnRedBase   = $B23A2E
+btnRedLite   = $D65A4C
+btnBlueBase  = $2F6BA6
+btnBlueLite  = $4A8AC8
+
+; ── Sound-IDs (vorgeladen via @SAMPLE oben) ───────────────────────────────
+sndDice = 101
+sndBust = 102
+sndWin  = 103
+
+; ── Sprache / Uebersetzungen ──────────────────────────────────────────────
+menuLangId = 44
+lang    = "de"          ; "de" oder "en"
+; Flache Tabelle mit zusammengesetzten Schluesseln ("de_xxx"/"en_xxx").
+; Verschachtelte Zuweisung (strings.de.xxx = ...) persistiert in Hollywood
+; NICHT zuverlaessig (Zwischenzugriff liefert Kopie) - daher nur eine Ebene.
+strings = {}
+
+strings["de_subtitle"]    = "Das Wuerfel-Wagnis-Spiel"
+strings["en_subtitle"]    = "A Push-Your-Luck Dice Game"
+strings["de_bStart"]      = "Spiel starten"
+strings["en_bStart"]      = "Start Game"
+strings["de_bRules"]      = "Regeln"
+strings["en_bRules"]      = "Rules"
+strings["de_bQuit"]       = "Ende"
+strings["en_bQuit"]       = "Quit"
+strings["de_langLabel"]   = "Sprache"
+strings["en_langLabel"]   = "Language"
+strings["de_langName"]    = "Deutsch"
+strings["en_langName"]    = "English"
+strings["de_rulesTitle"]  = "REGELN"
+strings["en_rulesTitle"]  = "RULES"
+strings["de_bBack"]       = "Zurueck"
+strings["en_bBack"]       = "Back"
+
+strings["de_newGame"]     = "NEUES SPIEL"
+strings["en_newGame"]     = "NEW GAME"
+strings["de_qHumans"]     = "Menschliche Spieler (1-4)?"
+strings["en_qHumans"]     = "Human players (1-4)?"
+strings["de_qComputers"]  = "Computer-Gegner (0-"
+strings["en_qComputers"]  = "Computer opponents (0-"
+
+strings["de_player"]      = "Spieler "
+strings["en_player"]      = "Player "
+strings["de_computer"]    = "Computer "
+strings["en_computer"]    = "Computer "
+strings["de_columnsWon"]  = "Gewonnene Spalten:"
+strings["en_columnsWon"]  = "Columns won:"
+strings["de_compTurn"]    = "Computer ist am Zug ..."
+strings["en_compTurn"]    = "Computer is thinking ..."
+strings["de_bRoll"]       = "Wuerfeln"
+strings["en_bRoll"]       = "Roll dice"
+strings["de_bRollAgain"]  = "Setzen und weiter wuerfeln"
+strings["en_bRollAgain"]  = "Place & roll again"
+strings["de_bEndTurn"]    = "Setzen und Zug beenden"
+strings["en_bEndTurn"]    = "Place & end turn"
+strings["de_bNext"]       = "Naechster Spieler"
+strings["en_bNext"]       = "Next player"
+strings["de_bQuitWin"]    = "Beenden"
+strings["en_bQuitWin"]    = "Quit"
+strings["de_pair"]        = "Paar: "
+strings["en_pair"]        = "Pair: "
+strings["de_select"]      = "WAEHLEN"
+strings["en_select"]      = "SELECT"
+strings["de_hint1"]       = "Erst ein Paar waehlen"
+strings["en_hint1"]       = "First choose a pair"
+strings["de_hint2"]       = "(Knopf WAEHLEN)."
+strings["en_hint2"]       = "(SELECT button)."
+strings["de_bustNoMove"]  = "Keine Figur setzbar."
+strings["en_bustNoMove"]  = "No move possible."
+strings["de_bustLost"]    = "Fortschritt verloren!"
+strings["en_bustLost"]    = "Progress lost!"
+strings["de_chosen"]      = "Gewaehlt: "
+strings["en_chosen"]      = "Chosen: "
+strings["de_compChooses"] = "Computer waehlt: "
+strings["en_compChooses"] = "Computer chooses: "
+strings["de_chosenCol"]   = "Gewaehlt: Spalte "
+strings["en_chosenCol"]   = "Chosen: column "
+strings["de_choicePrompt"] = "Nur 1 Runner frei - Spalte waehlen:"
+strings["en_choicePrompt"] = "Only 1 runner free - choose column:"
+strings["de_choicePair1"] = "Paar "
+strings["en_choicePair1"] = "Pair "
+strings["de_choicePair2"] = " - Spalte waehlen"
+strings["en_choicePair2"] = " - choose column"
+strings["de_wins"]        = "gewinnt!"
+strings["en_wins"]        = "wins!"
+
+strings["de_rules"] = {
+	"Ziel: Als Erster 3 Spalten erobern.",
+	"",
+	"- 3 weisse Runner pro Zug, max. 3 Spalten aktiv.",
+	"- 4 Wuerfel zu 2 Paaren kombinieren (Summen 2-12),",
+	"  eine Paarung waehlen; beide Summen ruecken vor",
+	"  (gleiche Summe = zwei Schritte).",
+	"- Eine neue Spalte kostet einen Runner.",
+	"- Kannst du mit einer Paarung zwei Laeufer setzen/",
+	"  bewegen, musst du beide nehmen - du darfst aber",
+	"  gezielt eine mit nur einem Laeufer waehlen.",
+	"- Nach dem Setzen: weiter wuerfeln (Risiko) oder",
+	"  Zug beenden und Fortschritt sichern.",
+	"- Keine Figur setzbar = BUST: Zugfortschritt weg!",
+	"- Runner ganz oben + Zug beenden = Spalte gehoert",
+	"  dir und ist dann fuer alle gesperrt.",
+	"- Wer zuerst 3 Spalten besitzt, gewinnt."
+}
+strings["en_rules"] = {
+	"Goal: Be the first to claim 3 columns.",
+	"",
+	"- 3 white runners per turn, max. 3 columns active.",
+	"- Roll 4 dice, form 2 pairs (sums 2-12), pick one",
+	"  pairing; both sums advance one step",
+	"  (same sum = two steps).",
+	"- Opening a new column uses one runner.",
+	"- If a pairing lets you move two runners, you must",
+	"  move both - but you may deliberately pick one",
+	"  that moves only a single runner.",
+	"- After placing: roll again (risk) or end turn",
+	"  to bank your progress.",
+	"- No legal move = BUST: turn progress is lost!",
+	"- Runner at the top + end turn = you claim the",
+	"  column (then closed for everyone).",
+	"- First to own 3 columns wins."
+}
+
+; ════════════════════════════════════════════════════════════════════════
+; HILFSFUNKTIONEN
+; ════════════════════════════════════════════════════════════════════════
+
+Function RowKey(plr, spalte)
+	Return(plr * 100 + spalte)
+EndFunction
+
+; Uebersetzung fuer den aktuellen Sprachschluessel.
+Function T(key$)
+	Return(strings[lang .. "_" .. key$])
+EndFunction
+
+; Spielt einen vorgeladenen Soundeffekt (@SAMPLE) ab.
+Function Sfx(id)
+	PlaySample(id)
+EndFunction
+
+Function ColToIdx(spalte)
+	Return(spalte - 2)
+EndFunction
+
+Function ColHeight(spalte)
+	Return(columns[ColToIdx(spalte)])
+EndFunction
+
+Function SortPair(valA, valB)
+	If valA > valB
+		Local tmpSwap = valA
+		valA = valB
+		valB = tmpSwap
+	EndIf
+	Return(valA, valB)
+EndFunction
+
+Function ColX(spalte)
+	Return(startX + ColToIdx(spalte) * colWidth)
+EndFunction
+
+Function FieldTop(spalte, stepPos)
+	Local centerOffset = (maxHeight - ColHeight(spalte)) / 2
+	Return(startY - (centerOffset + stepPos) * rowHeight)
+EndFunction
+
+Function FieldMidX(spalte)
+	Return(ColX(spalte) + colWidth / 2)
+EndFunction
+
+Function FieldMidY(spalte, stepPos)
+	Return(FieldTop(spalte, stepPos) + rowHeight / 2)
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; BUTTONS
+; ════════════════════════════════════════════════════════════════════════
+
+Function ClearButtons()
+	; Nur die tatsaechlich erzeugten Buttons loeschen. Frueher wurde
+	; 1..buttonCount geloescht, obwohl bei nicht-spielbaren Paaren Luecken
+	; in den IDs entstanden -> DeleteButton auf nie erzeugte ID.
+	For Local btnIdx = 0 To buttonCount - 1
+		DeleteButton(buttonIds[btnIdx])
+	Next
+	buttonIds   = {}
+	buttonCount = 0
+EndFunction
+
+; Zeichnet einen gefuellten Knopf: Basisfarbe mit schwarzem Rand plus hellem
+; Glanzstreifen oben (statt nur Outline). Der Text kommt vom Aufrufer darueber.
+; #SIMPLEBUTTON ist nur die Klickflaeche; das Sichtbare wird hier gemalt und
+; bei jedem Aufruf (nach ClearPanel) neu gezeichnet.
+Function DrawButtonBg(bx, by, bw, bh, basis, glanz)
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #BLACK, 1)
+	Box(bx, by, bw, bh, basis)
+	SetFormStyle(#BORDER, glanz, 1)          ; Glanz ohne sichtbaren Rand
+	Box(bx + 2, by + 2, bw - 4, bh / 2 - 1, glanz)
+	SetFormStyle(#BORDER, #BLACK, 1)         ; Rahmenstil zuruecksetzen
+EndFunction
+
+Function ShowEndTurnButton()
+	If endTurnActive = False
+		MakeButton(endBtnId, #SIMPLEBUTTON, endBtnX, endBtnY, endBtnW, endBtnH, {OnMouseUp = OnEndTurn})
+		endTurnActive = True
+	EndIf
+	DrawButtonBg(endBtnX, endBtnY, endBtnW, endBtnH, btnRedBase, btnRedLite)
+	SetFont(#SANS, 14)
+	TextOut(endBtnX + 10, endBtnY + 8, T("bEndTurn"), #WHITE)
+EndFunction
+
+Function HideEndTurnButton()
+	If endTurnActive
+		DeleteButton(endBtnId)
+		endTurnActive = False
+	EndIf
+EndFunction
+
+Function ShowQuitButton()
+	If quitActive = False
+		MakeButton(quitBtnId, #SIMPLEBUTTON, endBtnX, endBtnY, endBtnW, endBtnH, {OnMouseUp = OnQuitGame})
+		quitActive = True
+	EndIf
+	DrawButtonBg(endBtnX, endBtnY, endBtnW, endBtnH, btnRedBase, btnRedLite)
+	SetFont(#SANS, 17)
+	TextOut(endBtnX + 12, endBtnY + 6, T("bQuitWin"), #WHITE)
+EndFunction
+
+; Zwei Buttons zur Auswahl der Spalte (unterhalb der Punktetabelle, oberhalb
+; des "Zug beenden"-Buttons). choicePending sperrt solange Wuerfeln/Beenden.
+Function ShowColChoice(c1, c2)
+	choiceCol1 = c1
+	choiceCol2 = c2
+	; Falls von einer vorherigen Auswahl noch Aktionsknoepfe sichtbar sind
+	; (Umschalten auf ein Konflikt-Paar), diese ausblenden - sonst kollidieren
+	; sie mit der Auswahl.
+	HideEndTurnButton()
+	HidePrimaryButton()
+	If choiceActive = False
+		MakeButton(choiceBtnId1, #SIMPLEBUTTON, panelX,       370, 80, 24, {OnMouseUp = OnColChoice})
+		MakeButton(choiceBtnId2, #SIMPLEBUTTON, panelX + 100, 370, 80, 24, {OnMouseUp = OnColChoice})
+		choiceActive = True
+	EndIf
+	choicePending = True
+	SetFillStyle(#FILLCOLOR)
+	Box(panelX, 340, 514, 86, #BLACK)
+	SetFont(#SANS, 15)
+	TextOut(panelX, 345, T("choicePrompt"), #YELLOW)
+	DrawButtonBg(panelX,       370, 80, 24, btnBlueBase, btnBlueLite)
+	DrawButtonBg(panelX + 100, 370, 80, 24, btnBlueBase, btnBlueLite)
+	SetFont(#SANS, 17)
+	TextOut(panelX + 32,  377, ToString(c1), #WHITE)
+	TextOut(panelX + 132, 377, ToString(c2), #WHITE)
+EndFunction
+
+Function HideColChoice()
+	If choiceActive
+		DeleteButton(choiceBtnId1)
+		DeleteButton(choiceBtnId2)
+		choiceActive = False
+	EndIf
+	SetFillStyle(#FILLCOLOR)
+	Box(panelX, 340, 514, 86, #BLACK)
+EndFunction
+
+; Ein einzelner Button, dessen Beschriftung je nach Spielzustand wechselt.
+; Die Aktion selbst entscheidet OnPrimaryAction anhand der Phase - so bleibt
+; es EIN Button/Klickbereich, nur der sichtbare Text wird neu gezeichnet.
+Function ShowPrimaryButton(beschriftung$)
+	If primaryActive = False
+		MakeButton(primaryBtnId, #SIMPLEBUTTON, primaryBtnX, primaryBtnY, primaryBtnW, primaryBtnH, {OnMouseUp = OnPrimaryAction})
+		primaryActive = True
+	EndIf
+	DrawButtonBg(primaryBtnX, primaryBtnY, primaryBtnW, primaryBtnH, btnGreenBase, btnGreenLite)
+	; Lange Beschriftung ("Setzen und weiter wuerfeln") kleiner setzen, damit
+	; sie in den (so breiten wie "Zug beenden") Kasten passt.
+	Local yOff = 6
+	If StrLen(beschriftung$) > 16
+		SetFont(#SANS, 14)
+		yOff = 8
+	Else
+		SetFont(#SANS, 17)
+	EndIf
+	TextOut(primaryBtnX + 10, primaryBtnY + yOff, beschriftung$, #WHITE)
+EndFunction
+
+Function HidePrimaryButton()
+	If primaryActive
+		DeleteButton(primaryBtnId)
+		primaryActive = False
+	EndIf
+	SetFillStyle(#FILLCOLOR)
+	Box(primaryBtnX, primaryBtnY, primaryBtnW, primaryBtnH, #BLACK)
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; BOARD ZEICHNEN
+; ════════════════════════════════════════════════════════════════════════
+
+Function DrawBoard()
+	SetFillStyle(#FILLCOLOR)
+	Box(0, 0, panelX - 2, 768, #BLACK)
+
+	SetFont(#SANS, 22)
+
+	For Local colOffset = 0 To 10
+		Local spalte    = colOffset + 2
+		Local spaltenHoehe = ColHeight(spalte)
+		Local fieldX    = ColX(spalte)
+
+		For Local stepPos = 1 To spaltenHoehe
+			Local fieldY   = FieldTop(spalte, stepPos)
+			Local fieldColor
+			If colOwner[spalte] > 0
+				; Gewonnene Spalte: komplett in der Farbe des Gewinners.
+				fieldColor = spielerFarben[colOwner[spalte]]
+			ElseIf stepPos = spaltenHoehe
+				fieldColor = #YELLOW          ; Zielfeld
+			Else
+				fieldColor = #RED
+			EndIf
+			SetFillStyle(#FILLCOLOR)
+			SetFormStyle(#BORDER, #BLACK, 1)
+			Box(fieldX, fieldY, colWidth, rowHeight, fieldColor)
+		Next
+
+		; Reihennummer (groesser) ueber das oberste Feld der Spalte, der
+		; Diagonale folgend. Zweistellige Zahlen etwas weiter nach links.
+		Local topFieldY = FieldTop(spalte, spaltenHoehe)
+		Local numStr$   = ToString(spalte)
+		Local numOffX   = 6
+		If StrLen(numStr$) > 1 Then numOffX = 11
+		TextOut(fieldX + colWidth / 2 - numOffX, topFieldY - 24, numStr$, #WHITE)
+	Next
+
+	DrawAllMarkers()
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; MARKER ZEICHNEN
+; ════════════════════════════════════════════════════════════════════════
+
+Function DrawAllMarkers()
+	If gameReady = False Then Return
+
+	Local markerSize = 16
+
+	; Permanente Spieler-Marker - weisser Rand fuer Kontrast, sonst geht
+	; z.B. #MAROON auf den roten Feldern (oder die Spielerfarbe auf einem
+	; bereits gewonnenen, gleichfarbigen Feld) optisch unter.
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #WHITE, 1)
+	For Local plr = 1 To nr_player
+		Local offsetX = 2
+		Local offsetY = 2
+		If plr = 2 Or plr = 4
+			offsetX = colWidth - markerSize - 2
+		EndIf
+		If plr = 3 Or plr = 4
+			offsetY = rowHeight - markerSize - 2
+		EndIf
+		For Local spalte = 2 To 12
+			Local stepPos = rowStore[RowKey(plr, spalte)]
+			If stepPos > 0 And colOwner[spalte] = 0   ; gewonnene Spalte: kein Marker
+				Local markerX = ColX(spalte) + offsetX
+				Local markerY = FieldTop(spalte, stepPos) + offsetY
+				Box(markerX, markerY, markerSize, markerSize, spielerFarben[plr])
+			EndIf
+		Next
+	Next
+
+	; Temporaere weisse Marker - schwarzer Rand fuer Kontrast (weiss auf
+	; gelbem Zielfeld bzw. ueber den Spielerfiguren sonst schlecht sichtbar).
+	SetFormStyle(#BORDER, #BLACK, 1)
+	For Local spalte = 2 To 12
+		If tempMarker[spalte] > 0
+			Local markerX = ColX(spalte) + (colWidth - markerSize) / 2
+			Local markerY = FieldTop(spalte, tempMarker[spalte]) + (rowHeight - markerSize) / 2
+			Box(markerX, markerY, markerSize, markerSize, #WHITE)
+		EndIf
+	Next
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; PANEL
+; ════════════════════════════════════════════════════════════════════════
+
+Function ClearPanel()
+	SetFillStyle(#FILLCOLOR)
+	Box(panelX, 0, 1024 - panelX, 768, #BLACK)
+EndFunction
+
+Function ShowScore(startzeile)
+	SetFont(#SANS, 15)
+	TextOut(panelX, startzeile, T("columnsWon"), #GRAY)
+	Local textY = startzeile + 20
+	For Local plr = 1 To nr_player
+		Local wonCount = 0
+		For Local spalte = 2 To 12
+			If colOwner[spalte] = plr Then wonCount = wonCount + 1
+		Next
+		Local wer$ = T("player")
+		If isComputer[plr] Then wer$ = T("computer")
+		TextOut(panelX, textY, wer$ .. ToString(plr) .. ": " .. ToString(wonCount) .. " / 3", spielerFarben[plr])
+		textY = textY + 18
+	Next
+EndFunction
+
+; "Spieler X" plus ein Farbquadrat in der Spielerfarbe (weisser Rand fuer
+; Kontrast, z.B. bei #MAROON). Wird oben im Panel angezeigt.
+Function ShowPlayerHeader()
+	SetFont(#SANS, 18)
+	Local wer$ = T("player")
+	If isComputer[currentPl] Then wer$ = T("computer")
+	TextOut(panelX, 10, wer$ .. ToString(currentPl), spielerFarben[currentPl])
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #WHITE, 1)
+	Box(panelX + 150, 12, 20, 20, spielerFarben[currentPl])
+	; Rahmenstil zuruecksetzen, sonst erhalten nachfolgende gefuellte
+	; (Loesch-)Boxen im Panel einen weissen Rand -> unnoetige Linien.
+	SetFormStyle(#BORDER, #BLACK, 1)
+EndFunction
+
+Function ShowStatus()
+	ClearPanel()
+	ShowPlayerHeader()
+	ShowScore(110)
+	; Zugbeginn: nur "Wuerfeln". Beenden geht erst nach dem Setzen eines Paars.
+	HideEndTurnButton()
+	If isComputer[currentPl]
+		HidePrimaryButton()
+		SetFont(#SANS, 16)
+		TextOut(panelX, 300, T("compTurn"), #GRAY)
+	Else
+		ShowPrimaryButton(T("bRoll"))
+	EndIf
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; SPIELER-ABFRAGE
+; ════════════════════════════════════════════════════════════════════════
+
+Function AskPlayers()
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #BLACK, 1)
+	Box(0, 0, 810, 555, #BLACK)
+	SetFont(#SANS, 30)
+	TextOut(#CENTER, 90, T("newGame"), {Align = #CENTER, Color = #YELLOW})
+
+	SetFont(#SANS, 18)
+	TextOut(200, 190, T("qHumans"), #WHITE)
+	Locate(200, 222)
+	Local nh = ToNumber(InKeyStr(#NUMERICAL, 1, False, True))
+	If nh < 1 Then nh = 1
+	If nh > 4 Then nh = 4
+
+	Local maxC = 4 - nh
+	TextOut(200, 275, T("qComputers") .. ToString(maxC) .. ")?", #WHITE)
+	Locate(200, 307)
+	Local nc = ToNumber(InKeyStr(#NUMERICAL, 1, False, True))
+	If nc < 0 Then nc = 0
+	If nc > maxC Then nc = maxC
+
+	nr_human  = nh
+	nr_player = nh + nc
+	For Local plr = 1 To nr_player
+		isComputer[plr] = (plr > nr_human)
+	Next
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; STARTMENUE + REGELN
+; ════════════════════════════════════════════════════════════════════════
+
+Function HideMenuButtons()
+	If menuActive
+		DeleteButton(menuStartId)
+		DeleteButton(menuRulesId)
+		DeleteButton(menuEndId)
+		DeleteButton(menuLangId)
+		menuActive = False
+	EndIf
+EndFunction
+
+Function HideBackButton()
+	If backActive
+		DeleteButton(menuBackId)
+		backActive = False
+	EndIf
+EndFunction
+
+; Menue-Knopf mit grob zentriertem Text (Breite ueber StrLen geschaetzt).
+Function DrawMenuButton(bx, by, bw, bh, label$, basis, glanz)
+	DrawButtonBg(bx, by, bw, bh, basis, glanz)
+	SetFont(#SANS, 18)
+	; Buttons sind auf Display-Mitte platziert -> #CENTER zentriert das Label
+	; genau ueber dem Button.
+	TextOut(#CENTER, by + 10, label$, {Align = #CENTER, Color = #WHITE})
+EndFunction
+
+Function ShowMenu()
+	phase = "menu"
+	HideBackButton()
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #BLACK, 1)
+	Box(0, 0, 810, 555, #BLACK)
+	SetFont(#SANS, 46)
+	TextOut(#CENTER, 80, "CAN'T STOP", {Align = #CENTER, Color = #YELLOW})
+	SetFont(#SANS, 16)
+	TextOut(#CENTER, 155, T("subtitle"), {Align = #CENTER, Color = #GRAY})
+
+	Local bx = 305
+	Local bw = 200
+	Local bh = 44
+	MakeButton(menuStartId, #SIMPLEBUTTON, bx, 230, bw, bh, {OnMouseUp = OnMenuStart})
+	DrawMenuButton(bx, 230, bw, bh, T("bStart"), btnGreenBase, btnGreenLite)
+	MakeButton(menuRulesId, #SIMPLEBUTTON, bx, 290, bw, bh, {OnMouseUp = OnMenuRules})
+	DrawMenuButton(bx, 290, bw, bh, T("bRules"), btnBlueBase, btnBlueLite)
+	MakeButton(menuEndId, #SIMPLEBUTTON, bx, 350, bw, bh, {OnMouseUp = OnMenuEnd})
+	DrawMenuButton(bx, 350, bw, bh, T("bQuit"), btnRedBase, btnRedLite)
+	; Sprachumschalter (zeigt aktuelle Sprache; Klick wechselt DE/EN)
+	MakeButton(menuLangId, #SIMPLEBUTTON, bx, 415, bw, 36, {OnMouseUp = OnLangToggle})
+	DrawMenuButton(bx, 415, bw, 36, T("langLabel") .. ": " .. T("langName"), btnBlueBase, btnBlueLite)
+	menuActive = True
+EndFunction
+
+Function ShowRules()
+	phase = "regeln"
+	HideMenuButtons()
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #BLACK, 1)
+	Box(0, 0, 810, 555, #BLACK)
+	SetFont(#SANS, 30)
+	TextOut(#CENTER, 25, T("rulesTitle"), {Align = #CENTER, Color = #YELLOW})
+
+	SetFont(#SANS, 16)
+	Local rules = strings[lang .. "_rules"]
+	Local y = 78
+	For Local i = 0 To TableItems(rules) - 1
+		If rules[i] <> "" Then TextOut(45, y, rules[i], #WHITE)
+		y = y + 25
+	Next
+
+	MakeButton(menuBackId, #SIMPLEBUTTON, 305, 495, 200, 40, {OnMouseUp = OnRulesBack})
+	DrawMenuButton(305, 495, 200, 40, T("bBack"), btnBlueBase, btnBlueLite)
+	backActive = True
+EndFunction
+
+Function OnMenuStart(msg)
+	HideMenuButtons()
+	AskPlayers()      ; Mensch-/Computer-Anzahl abfragen (blockierend)
+	StartGame()
+EndFunction
+
+Function OnMenuRules(msg)
+	ShowRules()
+EndFunction
+
+Function OnMenuEnd(msg)
+	End()
+EndFunction
+
+Function OnLangToggle(msg)
+	If lang = "de" Then lang = "en" Else lang = "de"
+	ShowMenu()          ; Menue in neuer Sprache neu zeichnen
+EndFunction
+
+Function OnRulesBack(msg)
+	ShowMenu()
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; SPIELER INITIALISIEREN
+; ════════════════════════════════════════════════════════════════════════
+
+Function InitPlayers()
+	rowStore = {}
+	For Local plr = 1 To nr_player
+		For Local spalte = 2 To 12
+			rowStore[RowKey(plr, spalte)] = 0
+		Next
+	Next
+	For Local spalte = 2 To 12
+		tempMarker[spalte]     = 0
+		prevTempMarker[spalte] = 0
+		colOwner[spalte]       = 0
+	Next
+	gameReady = True
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; TEMP-MARKER VERWALTUNG
+; ════════════════════════════════════════════════════════════════════════
+
+Function ResetTempMarker()
+	For Local spalte = 2 To 12
+		tempMarker[spalte]     = 0
+		prevTempMarker[spalte] = 0
+	Next
+EndFunction
+
+Function SaveTempMarker()
+	For Local spalte = 2 To 12
+		prevTempMarker[spalte] = tempMarker[spalte]
+	Next
+EndFunction
+
+Function RestoreTempMarker()
+	For Local spalte = 2 To 12
+		tempMarker[spalte] = prevTempMarker[spalte]
+	Next
+EndFunction
+
+Function CountTempCols()
+	Local anzahlAktiv = 0
+	For Local spalte = 2 To 12
+		If tempMarker[spalte] > 0 Then anzahlAktiv = anzahlAktiv + 1
+	Next
+	Return(anzahlAktiv)
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; SPIELLOGIK
+; ════════════════════════════════════════════════════════════════════════
+
+Function ColPlayable(spalte)
+	If colOwner[spalte] > 0 Then Return(False)                     ; gewonnene Spalte geschlossen
+	If tempMarker[spalte] >= ColHeight(spalte) Then Return(False)  ; Runner ganz oben - kann nicht weiter
+	If tempMarker[spalte] > 0 Then Return(True)                   ; hat Runner, kann vorruecken
+	If CountTempCols() < 3 Then Return(True)                       ; freier Runner vorhanden
+	Return(False)
+EndFunction
+
+Function PairPlayable(summe1, summe2)
+	If summe1 = summe2 Then Return(ColPlayable(summe1))
+	Return(ColPlayable(summe1) Or ColPlayable(summe2))
+EndFunction
+
+; True, wenn ein Paar mit zwei verschiedenen Summen beide Spalten neu
+; eroeffnen wuerde, aber nur noch EIN Runner frei ist. Dann muss der Spieler
+; entscheiden, welche der beiden Spalten der letzte Runner belegt.
+Function PairNeedsChoice(summe1, summe2)
+	If summe1 = summe2            Then Return(False)
+	If ColPlayable(summe1) = False Then Return(False)
+	If ColPlayable(summe2) = False Then Return(False)
+	If tempMarker[summe1] > 0     Then Return(False)   ; belegt schon einen Runner
+	If tempMarker[summe2] > 0     Then Return(False)
+	If (3 - CountTempCols()) >= 2 Then Return(False)   ; genug Runner fuer beide
+	Return(True)
+EndFunction
+
+Function MoveCol(spalte)
+	If colOwner[spalte] > 0 Then Return
+	If tempMarker[spalte] = 0
+		tempMarker[spalte] = rowStore[RowKey(currentPl, spalte)] + 1
+	Else
+		tempMarker[spalte] = tempMarker[spalte] + 1
+	EndIf
+	If tempMarker[spalte] > ColHeight(spalte)
+		tempMarker[spalte] = ColHeight(spalte)
+	EndIf
+EndFunction
+
+Function ApplyPair(summe1, summe2)
+	; Beide Summen einzeln anwenden - auch wenn sie gleich sind (z.B. 5+5),
+	; dann rueckt die Spalte korrekt um zwei Felder vor. ColPlayable wird vor
+	; jedem Zug neu geprueft (nach dem 1. Zug hat die Spalte einen Temp-Marker,
+	; bleibt also spielbar; die Hoehenbegrenzung passiert in MoveCol).
+	If ColPlayable(summe1) Then MoveCol(summe1)
+	If ColPlayable(summe2) Then MoveCol(summe2)
+EndFunction
+
+Function CommitTempMarker()
+	For Local spalte = 2 To 12
+		If tempMarker[spalte] > 0
+			rowStore[RowKey(currentPl, spalte)] = tempMarker[spalte]
+			If tempMarker[spalte] >= ColHeight(spalte)
+				colOwner[spalte] = currentPl
+			EndIf
+		EndIf
+	Next
+	ResetTempMarker()
+	Local wonCount = 0
+	For Local spalte = 2 To 12
+		If colOwner[spalte] = currentPl Then wonCount = wonCount + 1
+	Next
+	If wonCount >= 3 Then winner = currentPl
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; WUERFELN
+; ════════════════════════════════════════════════════════════════════════
+
+; ── Wuerfel-Grafik + Roll-Animation ──────────────────────────────────────
+; Ein Augenpunkt (kleines Quadrat) an Rasterposition (col,row), col/row {0,1,2}.
+Function DrawPip(dx, dy, s, col, row)
+	Local ps = s / 6
+	Local px = dx + s * (col + 1) / 4 - ps / 2
+	Local py = dy + s * (row + 1) / 4 - ps / 2
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #BLACK, 1)
+	Box(px, py, ps, ps, #BLACK)
+EndFunction
+
+; Ein Wuerfel: weisses Quadrat mit schwarzem Rand und Augen fuer 1..6.
+Function DrawDie(dx, dy, s, val)
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #BLACK, 2)
+	Box(dx, dy, s, s, #WHITE)
+	SetFormStyle(#BORDER, #BLACK, 1)
+	If val = 1 Or val = 3 Or val = 5 Then DrawPip(dx, dy, s, 1, 1)
+	If val >= 2
+		DrawPip(dx, dy, s, 0, 0)
+		DrawPip(dx, dy, s, 2, 2)
+	EndIf
+	If val >= 4
+		DrawPip(dx, dy, s, 2, 0)
+		DrawPip(dx, dy, s, 0, 2)
+	EndIf
+	If val = 6
+		DrawPip(dx, dy, s, 0, 1)
+		DrawPip(dx, dy, s, 2, 1)
+	EndIf
+EndFunction
+
+; Vier Wuerfel nebeneinander oben im Panel.
+Function DrawFourDice(w1, w2, w3, w4)
+	Local s   = 40
+	Local dy  = 42
+	Local gap = 46
+	DrawDie(panelX,           dy, s, w1)
+	DrawDie(panelX + gap,     dy, s, w2)
+	DrawDie(panelX + gap * 2, dy, s, w3)
+	DrawDie(panelX + gap * 3, dy, s, w4)
+EndFunction
+
+; Kurze Roll-Animation: Frames mit zufaelligen Augen, wird langsamer, bleibt
+; dann auf dem echten Ergebnis stehen.
+Function RollDiceAnimation(w1, w2, w3, w4)
+	PlaySample(sndDice, {Times = 0})   ; Rasseln in Endlosschleife, bis die Wuerfel stehen
+	For Local frame = 1 To 12
+		DrawFourDice(Rnd(6) + 1, Rnd(6) + 1, Rnd(6) + 1, Rnd(6) + 1)
+		Wait(2 + frame / 4)
+	Next
+	DrawFourDice(w1, w2, w3, w4)
+	StopSample(sndDice)                ; stoppt genau dann, wenn die Wuerfel gezeichnet sind
+EndFunction
+
+Function DoThrowDice()
+	ClearButtons()
+	HideColChoice()
+	choicePending = False
+	wurf        = {}
+	wurfAnzahl  = 0
+	selectedIdx = -1
+
+	Local wuerfel1 = Rnd(6) + 1
+	Local wuerfel2 = Rnd(6) + 1
+	Local wuerfel3 = Rnd(6) + 1
+	Local wuerfel4 = Rnd(6) + 1
+
+	Local summeA, summeB, summeC, summeD, summeE, summeF
+	summeA, summeB = SortPair(wuerfel1 + wuerfel2, wuerfel3 + wuerfel4)
+	summeC, summeD = SortPair(wuerfel1 + wuerfel3, wuerfel2 + wuerfel4)
+	summeE, summeF = SortPair(wuerfel1 + wuerfel4, wuerfel2 + wuerfel3)
+
+	wurf[0]    = {sum1 = summeA, sum2 = summeB}
+	wurfAnzahl = 1
+	If summeA <> summeC Or summeB <> summeD
+		wurf[1]    = {sum1 = summeC, sum2 = summeD}
+		wurfAnzahl = 2
+	EndIf
+	If (summeC <> summeE Or summeD <> summeF) And (summeA <> summeE Or summeB <> summeF)
+		wurf[wurfAnzahl] = {sum1 = summeE, sum2 = summeF}
+		wurfAnzahl       = wurfAnzahl + 1
+	EndIf
+
+	gewuerfelt = True
+
+	; Waehlbar ist jede Paarung, mit der mindestens ein Laeufer gesetzt/bewegt
+	; werden kann. Die Wahl der Paarung ist frei - man darf auch gezielt eine
+	; nehmen, die nur einen Laeufer bewegt. Innerhalb der gewaehlten Paarung
+	; ruecken aber beide Summen vor, sofern moeglich (ApplyPair). BUST, wenn
+	; keine Paarung spielbar ist.
+	Local anyPlayable = False
+	For Local pairIdx = 0 To wurfAnzahl - 1
+		If PairPlayable(wurf[pairIdx].sum1, wurf[pairIdx].sum2) Then anyPlayable = True
+	Next
+
+	ClearPanel()
+	ShowPlayerHeader()
+	HidePrimaryButton()
+	HideEndTurnButton()
+	RollDiceAnimation(wuerfel1, wuerfel2, wuerfel3, wuerfel4)
+
+	If anyPlayable = False
+		Sfx(sndBust)
+		SetFont(#SANS, 20)
+		TextOut(panelX, 105, "BUST!", #RED)
+		SetFont(#SANS, 16)
+		TextOut(panelX, 132, T("bustNoMove"), #WHITE)
+		TextOut(panelX, 155, T("bustLost"), #GRAY)
+		ResetTempMarker()
+		HideEndTurnButton()
+		DrawBoard()
+		gewuerfelt = False
+		phase = "bust"
+		ShowPrimaryButton(T("bNext"))
+		Return
+	EndIf
+
+	Local textY = 105
+	buttonCount = 0
+	For Local pairIdx = 0 To wurfAnzahl - 1
+		Local choosable = PairPlayable(wurf[pairIdx].sum1, wurf[pairIdx].sum2)
+		Local textColor = #WHITE
+		If choosable = False Then textColor = #GRAY
+		SetFont(#SANS, 17)
+		TextOut(panelX, textY, T("pair") .. wurf[pairIdx].sum1 .. " + " .. wurf[pairIdx].sum2, textColor)
+		If choosable
+			; Button-ID = pairIdx+1, damit OnPairSelect (msg.id-1) das Paar
+			; unabhaengig von Luecken korrekt zurueckrechnet.
+			Local btnId = pairIdx + 1
+			DrawButtonBg(panelX + 140, textY, 80, 24, btnBlueBase, btnBlueLite)
+			SetFont(#SANS, 15)
+			TextOut(panelX + 152, textY + 4, T("select"), #WHITE)
+			MakeButton(btnId, #SIMPLEBUTTON, panelX + 140, textY, 80, 24, {OnMouseUp = OnPairSelect})
+			buttonIds[buttonCount] = btnId
+			buttonCount = buttonCount + 1
+		EndIf
+		textY = textY + 28
+	Next
+
+	SetFont(#SANS, 15)
+	TextOut(panelX, textY + 12, T("hint1"), #GRAY)
+	TextOut(panelX, textY + 29, T("hint2"), #GRAY)
+	ShowScore(textY + 52)
+	; Vor der Paarwahl gibt es keine Aktion (kein Wuerfeln, kein Beenden) ->
+	; beide Aktionsknoepfe ausblenden.
+	HidePrimaryButton()
+	HideEndTurnButton()
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; NAECHSTER SPIELER
+; ════════════════════════════════════════════════════════════════════════
+
+Function NextPlayer()
+	currentPl = currentPl + 1
+	If currentPl > nr_player Then currentPl = 1
+	ResetTempMarker()
+	gewuerfelt  = False
+	selectedIdx = -1
+	phase       = "spielen"
+	ClearButtons()
+	HideColChoice()
+	choicePending = False
+	DrawBoard()
+	ShowStatus()
+	If isComputer[currentPl] Then PlayComputerTurn()
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; EVENT-CALLBACKS
+; ════════════════════════════════════════════════════════════════════════
+
+Function OnPairSelect(msg)
+	If aiThinking Then Return       ; waehrend eines Computer-Zugs keine Klicks
+	If phase <> "spielen" Then Return
+	Local pairIdx = msg.id - 1
+	If pairIdx < 0 Or pairIdx >= wurfAnzahl Then Return
+
+	; Evtl. offene Spalten-Auswahl eines vorher geklickten Paars verwerfen.
+	HideColChoice()
+	choicePending = False
+
+	RestoreTempMarker()
+	selectedIdx = pairIdx
+	Local s1 = wurf[pairIdx].sum1
+	Local s2 = wurf[pairIdx].sum2
+
+	; Konflikt: zwei neue Spalten, aber nur ein Runner frei -> Spieler waehlt.
+	If PairNeedsChoice(s1, s2)
+		DrawBoard()
+		SetFillStyle(#FILLCOLOR)
+		Box(panelX, 86, 514, 16, #BLACK)
+		SetFont(#SANS, 15)
+		TextOut(panelX, 87, T("choicePair1") .. s1 .. " + " .. s2 .. T("choicePair2"), #GREEN)
+		ShowColChoice(s1, s2)
+		Return
+	EndIf
+
+	ApplyPair(s1, s2)
+	DrawBoard()
+
+	SetFillStyle(#FILLCOLOR)
+	Box(panelX, 86, 514, 16, #BLACK)
+	SetFont(#SANS, 15)
+	TextOut(panelX, 87, T("chosen") .. s1 .. " + " .. s2, #GREEN)
+	ShowPrimaryButton(T("bRollAgain"))
+	ShowEndTurnButton()
+EndFunction
+
+; Der Spieler hat beim letzten Runner eine der beiden Spalten gewaehlt.
+Function OnColChoice(msg)
+	If aiThinking Then Return       ; waehrend eines Computer-Zugs keine Klicks
+	If choicePending = False Then Return
+	Local spalte = choiceCol1
+	If msg.id = choiceBtnId2 Then spalte = choiceCol2
+
+	HideColChoice()
+	choicePending = False
+	MoveCol(spalte)
+	DrawBoard()
+
+	SetFillStyle(#FILLCOLOR)
+	Box(panelX, 86, 514, 16, #BLACK)
+	SetFont(#SANS, 15)
+	TextOut(panelX, 87, T("chosenCol") .. ToString(spalte), #GREEN)
+	ShowPrimaryButton(T("bRollAgain"))
+	ShowEndTurnButton()
+EndFunction
+
+Function StartGame()
+	InitPlayers()
+	phase = "spielen"
+	DrawBoard()
+	ShowStatus()
+EndFunction
+
+; Zentrale Aktion des Primaerknopfs - was passiert, haengt vom Zustand ab.
+; Rechtsklick (OnRightMouse) ruft dieselbe Funktion als Shortcut auf.
+Function OnPrimaryAction(msg)
+	If aiThinking Then Return       ; waehrend eines Computer-Zugs keine Klicks
+
+	If phase = "bust"
+		NextPlayer()
+		Return
+	EndIf
+
+	If phase <> "spielen" Then Return
+	If winner > 0 Then Return
+	If choicePending Then Return   ; erst Spalte waehlen
+
+	If gewuerfelt = False
+		DoThrowDice()
+	ElseIf selectedIdx >= 0
+		SaveTempMarker()
+		gewuerfelt = False
+		DoThrowDice()
+	EndIf
+EndFunction
+
+Function OnRightMouse(msg)
+	OnPrimaryAction(msg)
+EndFunction
+
+; Wird ausschliesslich vom dedizierten "Zug beenden"-Button ausgeloest.
+; Dadurch entfaellt der frueher noetige ignoreNextLeftClick-Hack: es gibt
+; keinen globalen Linksklick-Handler mehr, der mit dem Button kollidiert.
+Function OnEndTurn(msg)
+	If aiThinking Then Return       ; waehrend eines Computer-Zugs keine Klicks
+	If phase <> "spielen" Then Return
+	If choicePending Then Return   ; erst Spalte waehlen, dann beenden
+	FinishTurn()
+EndFunction
+
+; Setzt den aktuellen Stand fest und geht zum naechsten Spieler (oder zeigt
+; den Sieg). Wird vom "Setzen und Zug beenden"-Button UND von der KI genutzt.
+; tempMarker haelt dabei immer den legitim erspielten Stand (0 zu Zugbeginn,
+; waechst nur ueber gewaehlte Paare, BUST setzt separat zurueck).
+Function FinishTurn()
+	CommitTempMarker()
+
+	ClearButtons()
+	DrawBoard()
+
+	If winner > 0
+		Sfx(sndWin)
+		HideEndTurnButton()
+		HidePrimaryButton()
+		ClearPanel()
+		SetFont(#SANS, 24)
+		Local sieger$ = T("player")
+		If isComputer[winner] Then sieger$ = T("computer")
+		TextOut(panelX, 290, sieger$ .. ToString(winner), spielerFarben[winner])
+		TextOut(panelX, 322, T("wins"), spielerFarben[winner])
+		ShowQuitButton()
+		phase = "ende"
+		Return
+	EndIf
+
+	NextPlayer()
+EndFunction
+
+Function OnQuitGame(msg)
+	End()
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; COMPUTER-GEGNER (KI)
+; ════════════════════════════════════════════════════════════════════════
+
+; Bewertet eine Spalte fuer die KI: zentrale Spalten (haeufigere Wuerfe) und
+; bereits laufende Runner sind wertvoller. Nicht spielbare Spalten = 0.
+Function AiColValue(col)
+	If ColPlayable(col) = False Then Return(0)
+	Local v = 7 - Abs(col - 7)             ; 7 (Mitte) ... 2 (Rand) ~ Wahrscheinlichkeit
+	If tempMarker[col] > 0 Then v = v + 4  ; schon aktiv -> weiter ausbauen
+	Return(v)
+EndFunction
+
+; Waehlt unter den spielbaren Paaren das mit dem hoechsten Wert.
+Function AiPickPairIdx()
+	; Wahl der Paarung ist frei; die KI nimmt die spielbare Paarung mit dem
+	; hoechsten Wert (AiColValue belohnt zentrale Spalten + aktive Laeufer und
+	; damit indirekt Paarungen, die zwei Laeufer bewegen).
+	Local best = -1
+	Local bestScore = -1
+	For Local i = 0 To wurfAnzahl - 1
+		If PairPlayable(wurf[i].sum1, wurf[i].sum2)
+			Local sc = AiColValue(wurf[i].sum1) + AiColValue(wurf[i].sum2)
+			If sc > bestScore
+				bestScore = sc
+				best = i
+			EndIf
+		EndIf
+	Next
+	Return(best)
+EndFunction
+
+Function AiPickColumn(c1, c2)
+	If AiColValue(c1) >= AiColValue(c2) Then Return(c1)
+	Return(c2)
+EndFunction
+
+; Entscheidet, ob die KI stoppt (sichert) oder weiterwuerfelt (Risiko).
+Function AiShouldStop(rollCount)
+	Local progress = 0
+	Local fertige  = 0
+	For Local col = 2 To 12
+		If tempMarker[col] > 0
+			progress = progress + (tempMarker[col] - rowStore[RowKey(currentPl, col)])
+			If tempMarker[col] >= ColHeight(col) Then fertige = fertige + 1
+		EndIf
+	Next
+	If fertige > 0 Then Return(True)            ; fertige Spalte(n) unbedingt sichern
+	If rollCount >= 12 Then Return(True)        ; Sicherheitsnetz gegen Endlos-Zug
+	Local runners = CountTempCols()
+	Local schwelle = 5
+	If runners >= 3 Then schwelle = 8          ; mit 3 Runnern etwas mutiger
+	If progress >= schwelle Then Return(True)
+	If Rnd(100) < 8 Then Return(True)           ; etwas Varianz
+	Return(False)
+EndFunction
+
+; Wendet die von der KI gewaehlte Paarung an (inkl. Spaltenwahl beim letzten
+; Runner) und zeigt sie im Panel an.
+Function AiApplyPair(pidx)
+	RestoreTempMarker()
+	selectedIdx = pidx
+	Local s1 = wurf[pidx].sum1
+	Local s2 = wurf[pidx].sum2
+	If PairNeedsChoice(s1, s2)
+		MoveCol(AiPickColumn(s1, s2))
+	Else
+		ApplyPair(s1, s2)
+	EndIf
+	DrawBoard()
+	SetFillStyle(#FILLCOLOR)
+	Box(panelX, 86, 514, 16, #BLACK)
+	SetFont(#SANS, 15)
+	TextOut(panelX, 87, T("compChooses") .. s1 .. " + " .. s2, #GREEN)
+EndFunction
+
+; Spielt einen kompletten Computer-Zug (blockierend, mit Pausen zum Zusehen).
+Function PlayComputerTurn()
+	aiThinking = True
+	Local rollCount = 0
+	Repeat
+		Wait(25)                 ; kurze Pause vor dem Wurf
+		DoThrowDice()            ; Animation + Paare + Phase
+		rollCount = rollCount + 1
+		If phase = "bust"
+			Wait(60)             ; Bust kurz stehen lassen
+			aiThinking = False
+			NextPlayer()
+			Return
+		EndIf
+		AiApplyPair(AiPickPairIdx())
+		Wait(45)                 ; gewaehltes Paar zeigen
+		If AiShouldStop(rollCount)
+			aiThinking = False
+			FinishTurn()         ; setzen + Zug beenden
+			Return
+		EndIf
+		SaveTempMarker()         ; "Setzen und weiter wuerfeln"
+		gewuerfelt = False
+	Forever
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; START
+; ════════════════════════════════════════════════════════════════════════
+
+ShowMenu()
+
+; Alle Aktionen laufen ueber Buttons (Menue/Wuerfeln/Setzen/Zug beenden/
+; WAEHLEN/Spalte waehlen). Rechtsklick bleibt nur als optionaler Shortcut
+; fuer den Primaerknopf erhalten.
+InstallEventHandler({
+	OnRightMouseUp = OnRightMouse
+})
+
+EscapeQuit(True)
+Repeat
+	WaitEvent
+Forever
