@@ -62,7 +62,7 @@ gewuerfelt  = False
 currentPl   = 1
 winner      = 0
 buttonCount = 0
-buttonIds   = {}   ; IDs der tatsaechlich erzeugten WAEHLEN-Buttons
+buttonIds   = {}   ; IDs der tatsaechlich erzeugten WÄHLEN-Buttons
 selectedIdx = -1
 phase       = "menu"    ; menu -> regeln -> (Abfrage) -> spielen/bust/ende
 
@@ -74,7 +74,7 @@ menuBackId  = 43
 menuActive  = False
 backActive  = False
 
-; ── Dedizierte Buttons (feste IDs, getrennt vom WAEHLEN-Bereich 1..3) ──────
+; ── Dedizierte Buttons (feste IDs, getrennt vom WÄHLEN-Bereich 1..3) ──────
 endBtnId      = 99
 quitBtnId     = 98
 endBtnX       = panelX
@@ -89,12 +89,12 @@ quitActive    = False
 choiceBtnId1  = 21
 choiceBtnId2  = 22
 choiceActive  = False
-choicePending = False   ; blockiert Wuerfeln/Zug-Beenden bis Auswahl getroffen
+choicePending = False   ; blockiert Würfeln/Zug-Beenden bis Auswahl getroffen
 choiceCol1    = 0
 choiceCol2    = 0
 
-; ── Primaerer Aktions-Button (kontextabhaengig: Start / Wuerfeln / Setzen
-;    und weiter wuerfeln / Naechster Spieler) ───────────────────────────────
+; ── Primaerer Aktions-Button (kontextabhaengig: Start / Würfeln / Setzen
+;    und weiter würfeln / Nächster Spieler) ───────────────────────────────
 primaryBtnId  = 30
 primaryActive = False
 primaryBtnX   = panelX
@@ -123,7 +123,7 @@ lang    = "de"          ; "de" oder "en"
 ; NICHT zuverlaessig (Zwischenzugriff liefert Kopie) - daher nur eine Ebene.
 strings = {}
 
-strings["de_subtitle"]    = "Das Wuerfel-Wagnis-Spiel"
+strings["de_subtitle"]    = "Das Würfel-Wagnis-Spiel"
 strings["en_subtitle"]    = "A Push-Your-Luck Dice Game"
 strings["de_bStart"]      = "Spiel starten"
 strings["en_bStart"]      = "Start Game"
@@ -137,7 +137,7 @@ strings["de_langName"]    = "Deutsch"
 strings["en_langName"]    = "English"
 strings["de_rulesTitle"]  = "REGELN"
 strings["en_rulesTitle"]  = "RULES"
-strings["de_bBack"]       = "Zurueck"
+strings["de_bBack"]       = "Zurück"
 strings["en_bBack"]       = "Back"
 
 strings["de_newGame"]     = "NEUES SPIEL"
@@ -155,39 +155,39 @@ strings["de_columnsWon"]  = "Gewonnene Spalten:"
 strings["en_columnsWon"]  = "Columns won:"
 strings["de_compTurn"]    = "Computer ist am Zug ..."
 strings["en_compTurn"]    = "Computer is thinking ..."
-strings["de_bRoll"]       = "Wuerfeln"
+strings["de_bRoll"]       = "Würfeln"
 strings["en_bRoll"]       = "Roll dice"
-strings["de_bRollAgain"]  = "Setzen und weiter wuerfeln"
+strings["de_bRollAgain"]  = "Setzen und weiter würfeln"
 strings["en_bRollAgain"]  = "Place & roll again"
 strings["de_bEndTurn"]    = "Setzen und Zug beenden"
 strings["en_bEndTurn"]    = "Place & end turn"
-strings["de_bNext"]       = "Naechster Spieler"
+strings["de_bNext"]       = "Nächster Spieler"
 strings["en_bNext"]       = "Next player"
 strings["de_bQuitWin"]    = "Beenden"
 strings["en_bQuitWin"]    = "Quit"
 strings["de_pair"]        = "Paar: "
 strings["en_pair"]        = "Pair: "
-strings["de_select"]      = "WAEHLEN"
+strings["de_select"]      = "WÄHLEN"
 strings["en_select"]      = "SELECT"
-strings["de_hint1"]       = "Erst ein Paar waehlen"
+strings["de_hint1"]       = "Erst ein Paar wählen"
 strings["en_hint1"]       = "First choose a pair"
-strings["de_hint2"]       = "(Knopf WAEHLEN)."
+strings["de_hint2"]       = "(Knopf WÄHLEN)."
 strings["en_hint2"]       = "(SELECT button)."
 strings["de_bustNoMove"]  = "Keine Figur setzbar."
 strings["en_bustNoMove"]  = "No move possible."
 strings["de_bustLost"]    = "Fortschritt verloren!"
 strings["en_bustLost"]    = "Progress lost!"
-strings["de_chosen"]      = "Gewaehlt: "
+strings["de_chosen"]      = "Gewählt: "
 strings["en_chosen"]      = "Chosen: "
-strings["de_compChooses"] = "Computer waehlt: "
+strings["de_compChooses"] = "Computer wählt: "
 strings["en_compChooses"] = "Computer chooses: "
-strings["de_chosenCol"]   = "Gewaehlt: Spalte "
+strings["de_chosenCol"]   = "Gewählt: Spalte "
 strings["en_chosenCol"]   = "Chosen: column "
-strings["de_choicePrompt"] = "Nur 1 Runner frei - Spalte waehlen:"
+strings["de_choicePrompt"] = "Nur 1 Runner frei - Spalte wählen:"
 strings["en_choicePrompt"] = "Only 1 runner free - choose column:"
 strings["de_choicePair1"] = "Paar "
 strings["en_choicePair1"] = "Pair "
-strings["de_choicePair2"] = " - Spalte waehlen"
+strings["de_choicePair2"] = " - Spalte wählen"
 strings["en_choicePair2"] = " - choose column"
 strings["de_wins"]        = "gewinnt!"
 strings["en_wins"]        = "wins!"
@@ -196,18 +196,18 @@ strings["de_rules"] = {
 	"Ziel: Als Erster 3 Spalten erobern.",
 	"",
 	"- 3 weisse Runner pro Zug, max. 3 Spalten aktiv.",
-	"- 4 Wuerfel zu 2 Paaren kombinieren (Summen 2-12),",
-	"  eine Paarung waehlen; beide Summen ruecken vor",
+	"- 4 Würfel zu 2 Paaren kombinieren (Summen 2-12),",
+	"  eine Paarung wählen; beide Summen rücken vor",
 	"  (gleiche Summe = zwei Schritte).",
 	"- Eine neue Spalte kostet einen Runner.",
-	"- Kannst du mit einer Paarung zwei Laeufer setzen/",
+	"- Kannst du mit einer Paarung zwei Läufer setzen/",
 	"  bewegen, musst du beide nehmen - du darfst aber",
-	"  gezielt eine mit nur einem Laeufer waehlen.",
-	"- Nach dem Setzen: weiter wuerfeln (Risiko) oder",
+	"  gezielt eine mit nur einem Läufer wählen.",
+	"- Nach dem Setzen: weiter würfeln (Risiko) oder",
 	"  Zug beenden und Fortschritt sichern.",
 	"- Keine Figur setzbar = BUST: Zugfortschritt weg!",
-	"- Runner ganz oben + Zug beenden = Spalte gehoert",
-	"  dir und ist dann fuer alle gesperrt.",
+	"- Runner ganz oben + Zug beenden = Spalte gehört",
+	"  dir und ist dann für alle gesperrt.",
 	"- Wer zuerst 3 Spalten besitzt, gewinnt."
 }
 strings["en_rules"] = {
@@ -237,7 +237,7 @@ Function RowKey(plr, spalte)
 	Return(plr * 100 + spalte)
 EndFunction
 
-; Uebersetzung fuer den aktuellen Sprachschluessel.
+; Uebersetzung für den aktuellen Sprachschluessel.
 Function T(key$)
 	Return(strings[lang .. "_" .. key$])
 EndFunction
@@ -287,7 +287,7 @@ EndFunction
 
 Function ClearButtons()
 	; Nur die tatsaechlich erzeugten Buttons loeschen. Frueher wurde
-	; 1..buttonCount geloescht, obwohl bei nicht-spielbaren Paaren Luecken
+	; 1..buttonCount geloescht, obwohl bei nicht-spielbaren Paaren Lücken
 	; in den IDs entstanden -> DeleteButton auf nie erzeugte ID.
 	For Local btnIdx = 0 To buttonCount - 1
 		DeleteButton(buttonIds[btnIdx])
@@ -306,7 +306,7 @@ Function DrawButtonBg(bx, by, bw, bh, basis, glanz)
 	Box(bx, by, bw, bh, basis)
 	SetFormStyle(#BORDER, glanz, 1)          ; Glanz ohne sichtbaren Rand
 	Box(bx + 2, by + 2, bw - 4, bh / 2 - 1, glanz)
-	SetFormStyle(#BORDER, #BLACK, 1)         ; Rahmenstil zuruecksetzen
+	SetFormStyle(#BORDER, #BLACK, 1)         ; Rahmenstil zurücksetzen
 EndFunction
 
 Function ShowEndTurnButton()
@@ -337,7 +337,7 @@ Function ShowQuitButton()
 EndFunction
 
 ; Zwei Buttons zur Auswahl der Spalte (unterhalb der Punktetabelle, oberhalb
-; des "Zug beenden"-Buttons). choicePending sperrt solange Wuerfeln/Beenden.
+; des "Zug beenden"-Buttons). choicePending sperrt solange Würfeln/Beenden.
 Function ShowColChoice(c1, c2)
 	choiceCol1 = c1
 	choiceCol2 = c2
@@ -382,7 +382,7 @@ Function ShowPrimaryButton(beschriftung$)
 		primaryActive = True
 	EndIf
 	DrawButtonBg(primaryBtnX, primaryBtnY, primaryBtnW, primaryBtnH, btnGreenBase, btnGreenLite)
-	; Lange Beschriftung ("Setzen und weiter wuerfeln") kleiner setzen, damit
+	; Lange Beschriftung ("Setzen und weiter würfeln") kleiner setzen, damit
 	; sie in den (so breiten wie "Zug beenden") Kasten passt.
 	Local yOff = 6
 	If StrLen(beschriftung$) > 16
@@ -455,7 +455,7 @@ Function DrawAllMarkers()
 
 	Local markerSize = 16
 
-	; Permanente Spieler-Marker - weisser Rand fuer Kontrast, sonst geht
+	; Permanente Spieler-Marker - weisser Rand für Kontrast, sonst geht
 	; z.B. #MAROON auf den roten Feldern (oder die Spielerfarbe auf einem
 	; bereits gewonnenen, gleichfarbigen Feld) optisch unter.
 	SetFillStyle(#FILLCOLOR)
@@ -479,7 +479,7 @@ Function DrawAllMarkers()
 		Next
 	Next
 
-	; Temporaere weisse Marker - schwarzer Rand fuer Kontrast (weiss auf
+	; Temporaere weisse Marker - schwarzer Rand für Kontrast (weiss auf
 	; gelbem Zielfeld bzw. ueber den Spielerfiguren sonst schlecht sichtbar).
 	SetFormStyle(#BORDER, #BLACK, 1)
 	For Local spalte = 2 To 12
@@ -516,7 +516,7 @@ Function ShowScore(startzeile)
 	Next
 EndFunction
 
-; "Spieler X" plus ein Farbquadrat in der Spielerfarbe (weisser Rand fuer
+; "Spieler X" plus ein Farbquadrat in der Spielerfarbe (weisser Rand für
 ; Kontrast, z.B. bei #MAROON). Wird oben im Panel angezeigt.
 Function ShowPlayerHeader()
 	SetFont(#SANS, 18)
@@ -526,7 +526,7 @@ Function ShowPlayerHeader()
 	SetFillStyle(#FILLCOLOR)
 	SetFormStyle(#BORDER, #WHITE, 1)
 	Box(panelX + 150, 12, 20, 20, spielerFarben[currentPl])
-	; Rahmenstil zuruecksetzen, sonst erhalten nachfolgende gefuellte
+	; Rahmenstil zurücksetzen, sonst erhalten nachfolgende gefuellte
 	; (Loesch-)Boxen im Panel einen weissen Rand -> unnoetige Linien.
 	SetFormStyle(#BORDER, #BLACK, 1)
 EndFunction
@@ -535,7 +535,7 @@ Function ShowStatus()
 	ClearPanel()
 	ShowPlayerHeader()
 	ShowScore(110)
-	; Zugbeginn: nur "Wuerfeln". Beenden geht erst nach dem Setzen eines Paars.
+	; Zugbeginn: nur "Würfeln". Beenden geht erst nach dem Setzen eines Paars.
 	HideEndTurnButton()
 	If isComputer[currentPl]
 		HidePrimaryButton()
@@ -736,7 +736,7 @@ EndFunction
 Function ColPlayable(spalte)
 	If colOwner[spalte] > 0 Then Return(False)                     ; gewonnene Spalte geschlossen
 	If tempMarker[spalte] >= ColHeight(spalte) Then Return(False)  ; Runner ganz oben - kann nicht weiter
-	If tempMarker[spalte] > 0 Then Return(True)                   ; hat Runner, kann vorruecken
+	If tempMarker[spalte] > 0 Then Return(True)                   ; hat Runner, kann vorrücken
 	If CountTempCols() < 3 Then Return(True)                       ; freier Runner vorhanden
 	Return(False)
 EndFunction
@@ -755,7 +755,7 @@ Function PairNeedsChoice(summe1, summe2)
 	If ColPlayable(summe2) = False Then Return(False)
 	If tempMarker[summe1] > 0     Then Return(False)   ; belegt schon einen Runner
 	If tempMarker[summe2] > 0     Then Return(False)
-	If (3 - CountTempCols()) >= 2 Then Return(False)   ; genug Runner fuer beide
+	If (3 - CountTempCols()) >= 2 Then Return(False)   ; genug Runner für beide
 	Return(True)
 EndFunction
 
@@ -773,7 +773,7 @@ EndFunction
 
 Function ApplyPair(summe1, summe2)
 	; Beide Summen einzeln anwenden - auch wenn sie gleich sind (z.B. 5+5),
-	; dann rueckt die Spalte korrekt um zwei Felder vor. ColPlayable wird vor
+	; dann rückt die Spalte korrekt um zwei Felder vor. ColPlayable wird vor
 	; jedem Zug neu geprueft (nach dem 1. Zug hat die Spalte einen Temp-Marker,
 	; bleibt also spielbar; die Hoehenbegrenzung passiert in MoveCol).
 	If ColPlayable(summe1) Then MoveCol(summe1)
@@ -801,7 +801,7 @@ EndFunction
 ; WUERFELN
 ; ════════════════════════════════════════════════════════════════════════
 
-; ── Wuerfel-Grafik + Roll-Animation ──────────────────────────────────────
+; ── Würfel-Grafik + Roll-Animation ──────────────────────────────────────
 ; Ein Augenpunkt (kleines Quadrat) an Rasterposition (col,row), col/row {0,1,2}.
 Function DrawPip(dx, dy, s, col, row)
 	Local ps = s / 6
@@ -812,7 +812,7 @@ Function DrawPip(dx, dy, s, col, row)
 	Box(px, py, ps, ps, #BLACK)
 EndFunction
 
-; Ein Wuerfel: weisses Quadrat mit schwarzem Rand und Augen fuer 1..6.
+; Ein Würfel: weisses Quadrat mit schwarzem Rand und Augen für 1..6.
 Function DrawDie(dx, dy, s, val)
 	SetFillStyle(#FILLCOLOR)
 	SetFormStyle(#BORDER, #BLACK, 2)
@@ -833,7 +833,7 @@ Function DrawDie(dx, dy, s, val)
 	EndIf
 EndFunction
 
-; Vier Wuerfel nebeneinander oben im Panel.
+; Vier Würfel nebeneinander oben im Panel.
 Function DrawFourDice(w1, w2, w3, w4)
 	Local s   = 40
 	Local dy  = 42
@@ -847,13 +847,13 @@ EndFunction
 ; Kurze Roll-Animation: Frames mit zufaelligen Augen, wird langsamer, bleibt
 ; dann auf dem echten Ergebnis stehen.
 Function RollDiceAnimation(w1, w2, w3, w4)
-	PlaySample(sndDice, {Times = 0})   ; Rasseln in Endlosschleife, bis die Wuerfel stehen
+	PlaySample(sndDice, {Times = 0})   ; Rasseln in Endlosschleife, bis die Würfel stehen
 	For Local frame = 1 To 12
 		DrawFourDice(Rnd(6) + 1, Rnd(6) + 1, Rnd(6) + 1, Rnd(6) + 1)
 		Wait(2 + frame / 4)
 	Next
 	DrawFourDice(w1, w2, w3, w4)
-	StopSample(sndDice)                ; stoppt genau dann, wenn die Wuerfel gezeichnet sind
+	StopSample(sndDice)                ; stoppt genau dann, wenn die Würfel gezeichnet sind
 EndFunction
 
 Function DoThrowDice()
@@ -887,10 +887,10 @@ Function DoThrowDice()
 
 	gewuerfelt = True
 
-	; Waehlbar ist jede Paarung, mit der mindestens ein Laeufer gesetzt/bewegt
+	; Waehlbar ist jede Paarung, mit der mindestens ein Läufer gesetzt/bewegt
 	; werden kann. Die Wahl der Paarung ist frei - man darf auch gezielt eine
-	; nehmen, die nur einen Laeufer bewegt. Innerhalb der gewaehlten Paarung
-	; ruecken aber beide Summen vor, sofern moeglich (ApplyPair). BUST, wenn
+	; nehmen, die nur einen Läufer bewegt. Innerhalb der gewählten Paarung
+	; rücken aber beide Summen vor, sofern möglich (ApplyPair). BUST, wenn
 	; keine Paarung spielbar ist.
 	Local anyPlayable = False
 	For Local pairIdx = 0 To wurfAnzahl - 1
@@ -929,7 +929,7 @@ Function DoThrowDice()
 		TextOut(panelX, textY, T("pair") .. wurf[pairIdx].sum1 .. " + " .. wurf[pairIdx].sum2, textColor)
 		If choosable
 			; Button-ID = pairIdx+1, damit OnPairSelect (msg.id-1) das Paar
-			; unabhaengig von Luecken korrekt zurueckrechnet.
+			; unabhaengig von Lücken korrekt zurückrechnet.
 			Local btnId = pairIdx + 1
 			DrawButtonBg(panelX + 140, textY, 80, 24, btnBlueBase, btnBlueLite)
 			SetFont(#SANS, 15)
@@ -945,7 +945,7 @@ Function DoThrowDice()
 	TextOut(panelX, textY + 12, T("hint1"), #GRAY)
 	TextOut(panelX, textY + 29, T("hint2"), #GRAY)
 	ShowScore(textY + 52)
-	; Vor der Paarwahl gibt es keine Aktion (kein Wuerfeln, kein Beenden) ->
+	; Vor der Paarwahl gibt es keine Aktion (kein Würfeln, kein Beenden) ->
 	; beide Aktionsknoepfe ausblenden.
 	HidePrimaryButton()
 	HideEndTurnButton()
@@ -989,7 +989,7 @@ Function OnPairSelect(msg)
 	Local s1 = wurf[pairIdx].sum1
 	Local s2 = wurf[pairIdx].sum2
 
-	; Konflikt: zwei neue Spalten, aber nur ein Runner frei -> Spieler waehlt.
+	; Konflikt: zwei neue Spalten, aber nur ein Runner frei -> Spieler wählt.
 	If PairNeedsChoice(s1, s2)
 		DrawBoard()
 		SetFillStyle(#FILLCOLOR)
@@ -1011,7 +1011,7 @@ Function OnPairSelect(msg)
 	ShowEndTurnButton()
 EndFunction
 
-; Der Spieler hat beim letzten Runner eine der beiden Spalten gewaehlt.
+; Der Spieler hat beim letzten Runner eine der beiden Spalten gewählt.
 Function OnColChoice(msg)
 	If aiThinking Then Return       ; waehrend eines Computer-Zugs keine Klicks
 	If choicePending = False Then Return
@@ -1050,7 +1050,7 @@ Function OnPrimaryAction(msg)
 
 	If phase <> "spielen" Then Return
 	If winner > 0 Then Return
-	If choicePending Then Return   ; erst Spalte waehlen
+	If choicePending Then Return   ; erst Spalte wählen
 
 	If gewuerfelt = False
 		DoThrowDice()
@@ -1071,14 +1071,14 @@ EndFunction
 Function OnEndTurn(msg)
 	If aiThinking Then Return       ; waehrend eines Computer-Zugs keine Klicks
 	If phase <> "spielen" Then Return
-	If choicePending Then Return   ; erst Spalte waehlen, dann beenden
+	If choicePending Then Return   ; erst Spalte wählen, dann beenden
 	FinishTurn()
 EndFunction
 
-; Setzt den aktuellen Stand fest und geht zum naechsten Spieler (oder zeigt
+; Setzt den aktuellen Stand fest und geht zum nächsten Spieler (oder zeigt
 ; den Sieg). Wird vom "Setzen und Zug beenden"-Button UND von der KI genutzt.
 ; tempMarker haelt dabei immer den legitim erspielten Stand (0 zu Zugbeginn,
-; waechst nur ueber gewaehlte Paare, BUST setzt separat zurueck).
+; wächst nur ueber gewählte Paare, BUST setzt separat zurück).
 Function FinishTurn()
 	CommitTempMarker()
 
@@ -1111,7 +1111,7 @@ EndFunction
 ; COMPUTER-GEGNER (KI)
 ; ════════════════════════════════════════════════════════════════════════
 
-; Bewertet eine Spalte fuer die KI: zentrale Spalten (haeufigere Wuerfe) und
+; Bewertet eine Spalte für die KI: zentrale Spalten (häufigere Wuerfe) und
 ; bereits laufende Runner sind wertvoller. Nicht spielbare Spalten = 0.
 Function AiColValue(col)
 	If ColPlayable(col) = False Then Return(0)
@@ -1123,8 +1123,8 @@ EndFunction
 ; Waehlt unter den spielbaren Paaren das mit dem hoechsten Wert.
 Function AiPickPairIdx()
 	; Wahl der Paarung ist frei; die KI nimmt die spielbare Paarung mit dem
-	; hoechsten Wert (AiColValue belohnt zentrale Spalten + aktive Laeufer und
-	; damit indirekt Paarungen, die zwei Laeufer bewegen).
+	; hoechsten Wert (AiColValue belohnt zentrale Spalten + aktive Läufer und
+	; damit indirekt Paarungen, die zwei Läufer bewegen).
 	Local best = -1
 	Local bestScore = -1
 	For Local i = 0 To wurfAnzahl - 1
@@ -1164,7 +1164,7 @@ Function AiShouldStop(rollCount)
 	Return(False)
 EndFunction
 
-; Wendet die von der KI gewaehlte Paarung an (inkl. Spaltenwahl beim letzten
+; Wendet die von der KI gewählte Paarung an (inkl. Spaltenwahl beim letzten
 ; Runner) und zeigt sie im Panel an.
 Function AiApplyPair(pidx)
 	RestoreTempMarker()
@@ -1198,13 +1198,13 @@ Function PlayComputerTurn()
 			Return
 		EndIf
 		AiApplyPair(AiPickPairIdx())
-		Wait(45)                 ; gewaehltes Paar zeigen
+		Wait(45)                 ; gewähltes Paar zeigen
 		If AiShouldStop(rollCount)
 			aiThinking = False
 			FinishTurn()         ; setzen + Zug beenden
 			Return
 		EndIf
-		SaveTempMarker()         ; "Setzen und weiter wuerfeln"
+		SaveTempMarker()         ; "Setzen und weiter würfeln"
 		gewuerfelt = False
 	Forever
 EndFunction
@@ -1215,9 +1215,9 @@ EndFunction
 
 ShowMenu()
 
-; Alle Aktionen laufen ueber Buttons (Menue/Wuerfeln/Setzen/Zug beenden/
-; WAEHLEN/Spalte waehlen). Rechtsklick bleibt nur als optionaler Shortcut
-; fuer den Primaerknopf erhalten.
+; Alle Aktionen laufen ueber Buttons (Menue/Würfeln/Setzen/Zug beenden/
+; WÄHLEN/Spalte wählen). Rechtsklick bleibt nur als optionaler Shortcut
+; für den Primaerknopf erhalten.
 InstallEventHandler({
 	OnRightMouseUp = OnRightMouse
 })
