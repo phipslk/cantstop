@@ -17,14 +17,14 @@ A clone of the classic push-your-luck dice game **Can't Stop**, written in
 |------|-------------|
 | `cantstop.hws` | Hollywood source code |
 | `cantstop.exe` | Windows binary (with embedded die icon) |
-| `cantstop68k.exe` | Amiga (68k) binary |
-| `cantstop68k.exe.info` | Amiga Workbench icon (die) for the 68k binary |
+| `cantstop68k` | Amiga (68k) binary |
+| `cantstop68k.info` | Amiga Workbench icon (die) for the 68k binary |
 | `dice.wav`, `bust.wav`, `win.wav` | Sound effects |
 
 ## Running
 
 - **Windows:** run `cantstop.exe`
-- **Amiga (68k):** run `cantstop68k.exe` (keep `cantstop68k.exe.info` next to it
+- **Amiga (68k):** run `cantstop68k` (keep `cantstop68k.info` next to it
   so Workbench shows the die icon)
 - **From source:** open `cantstop.hws` with Hollywood. The three `.wav`
   files must sit next to the script.
