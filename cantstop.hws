@@ -1,4 +1,4 @@
-@APPTITLE "Can't Stop"
+﻿@APPTITLE "Can't Stop"
 @APPAUTHOR "Philipp Lonke"
 @APPCOPYRIGHT "(C) Copyright 2026 by Philipp Lonke"
 @APPVERSION "$VER: Can't Stop 0.1 beta"
@@ -7,18 +7,28 @@
 @DISPLAY {Width = 810, Height = 555, Color = #BLACK, Mode = "Windowed"}
 
 ; Soundeffekte vorladen (muessen neben cantstop.hws liegen).
-@SAMPLE 101, "dice.wav"
-@SAMPLE 102, "bust.wav"
-@SAMPLE 103, "win.wav"
+@IF #HW_AMIGA
+	@SAMPLE 101, "dice.8svx"
+	@SAMPLE 102, "bust.8svx"
+	@SAMPLE 103, "win.8svx"
+@ELSE
+	@SAMPLE 101, "dice.wav"
+	@SAMPLE 102, "bust.wav"
+	@SAMPLE 103, "win.wav"
+@ENDIF
+	
 
 ; ════════════════════════════════════════════════════════════════════════
 ; SPIELFELD-LAYOUT
 ; ════════════════════════════════════════════════════════════════════════
 
-columns   = {2, 4, 6, 8, 10, 12, 10, 8, 6, 4, 2}
-maxHeight = 12
+; Klassische Can't-Stop-Spaltenhoehen (2->3, 3->5, ... 7->13, ... 12->3).
+columns   = {3, 5, 7, 9, 11, 13, 11, 9, 7, 5, 3}
+maxHeight = 13
 colWidth  = 40
-rowHeight = 40
+; rowHeight von 40 auf 37 verkleinert, damit die jetzt 13 Felder hohe Spalte 7
+; (13 * 37 = 481 px) samt Nummernbeschriftung noch ins 555 px hohe Fenster passt.
+rowHeight = 37
 startX    = 30
 startY    = 520   ; Unterkante der laengsten Spalte; Feld sitzt oben am Fensterrand
 panelX    = 510
@@ -813,21 +823,21 @@ Function DrawPip(dx, dy, s, col, row)
 EndFunction
 
 ; Ein Würfel: weisses Quadrat mit schwarzem Rand und Augen für 1..6.
-Function DrawDie(dx, dy, s, val)
+Function DrawDie(dx, dy, s, Val)
 	SetFillStyle(#FILLCOLOR)
 	SetFormStyle(#BORDER, #BLACK, 2)
 	Box(dx, dy, s, s, #WHITE)
 	SetFormStyle(#BORDER, #BLACK, 1)
-	If val = 1 Or val = 3 Or val = 5 Then DrawPip(dx, dy, s, 1, 1)
-	If val >= 2
+	If Val = 1 Or Val = 3 Or Val = 5 Then DrawPip(dx, dy, s, 1, 1)
+	If Val >= 2
 		DrawPip(dx, dy, s, 0, 0)
 		DrawPip(dx, dy, s, 2, 2)
 	EndIf
-	If val >= 4
+	If Val >= 4
 		DrawPip(dx, dy, s, 2, 0)
 		DrawPip(dx, dy, s, 0, 2)
 	EndIf
-	If val = 6
+	If Val = 6
 		DrawPip(dx, dy, s, 0, 1)
 		DrawPip(dx, dy, s, 2, 1)
 	EndIf
