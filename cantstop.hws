@@ -11,10 +11,12 @@
 	@SAMPLE 101, "dice.8svx"
 	@SAMPLE 102, "bust.8svx"
 	@SAMPLE 103, "win.8svx"
+	@SAMPLE 104, "place.8svx"
 @ELSE
 	@SAMPLE 101, "dice.wav"
 	@SAMPLE 102, "bust.wav"
 	@SAMPLE 103, "win.wav"
+	@SAMPLE 104, "place.wav"
 @ENDIF
 	
 
@@ -121,9 +123,10 @@ btnBlueBase  = $2F6BA6
 btnBlueLite  = $4A8AC8
 
 ; ── Sound-IDs (vorgeladen via @SAMPLE oben) ───────────────────────────────
-sndDice = 101
-sndBust = 102
-sndWin  = 103
+sndDice  = 101
+sndBust  = 102
+sndWin   = 103
+sndPlace = 104   ; kurzer Klick beim Setzen/Vorrücken eines Runners
 
 ; ── Sprache / Uebersetzungen ──────────────────────────────────────────────
 menuLangId = 44
@@ -201,6 +204,8 @@ strings["de_choicePair2"] = " - Spalte wählen"
 strings["en_choicePair2"] = " - choose column"
 strings["de_wins"]        = "gewinnt!"
 strings["en_wins"]        = "wins!"
+strings["de_bustRisk"]    = "Bust-Risiko"
+strings["en_bustRisk"]    = "Bust risk"
 
 strings["de_rules"] = {
 	"Ziel: Als Erster 3 Spalten erobern.",
@@ -417,10 +422,91 @@ EndFunction
 ; BOARD ZEICHNEN
 ; ════════════════════════════════════════════════════════════════════════
 
-Function DrawBoard()
+; Zeichnet EIN Spielfeld (Farbe wie im Board) inkl. dezenter Glanzkante oben
+; fuer etwas Tiefe. Ohne Marker - die kommen separat.
+Function DrawFieldCell(spalte, stepPos)
+	Local fieldX = ColX(spalte)
+	Local fieldY = FieldTop(spalte, stepPos)
+	Local fieldColor
+	Local liteColor = 0
+	Local hasLite   = True
+	If colOwner[spalte] > 0
+		fieldColor = spielerFarben[colOwner[spalte]]   ; gewonnene Spalte
+		hasLite    = False
+	ElseIf stepPos = ColHeight(spalte)
+		fieldColor = #YELLOW          ; Zielfeld
+		liteColor  = $FFF0A0
+	Else
+		fieldColor = #RED
+		liteColor  = $E8695C
+	EndIf
 	SetFillStyle(#FILLCOLOR)
-	Box(0, 0, panelX - 2, 768, #BLACK)
+	SetFormStyle(#BORDER, #BLACK, 1)
+	Box(fieldX, fieldY, colWidth, rowHeight, fieldColor)
+	If hasLite
+		SetFormStyle(#BORDER, liteColor, 1)          ; heller Streifen oben = Tiefe
+		Box(fieldX + 3, fieldY + 3, colWidth - 6, 4, liteColor)
+		SetFormStyle(#BORDER, #BLACK, 1)
+	EndIf
+EndFunction
 
+; Temporaerer Runner als weisser Kreis. Circle() nimmt die obere linke Ecke des
+; Huellrechtecks -> Mittelpunkt minus Radius.
+Function DrawRunnerCircle(spalte, stepPos)
+	Local cx = FieldMidX(spalte)
+	Local cy = FieldMidY(spalte, stepPos)
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #BLACK, 2)
+	Circle(cx - 8, cy - 8, 8, #WHITE)
+	SetFormStyle(#BORDER, #BLACK, 1)
+EndFunction
+
+; Heller Rahmen um ein aktives Feld - hebt die belegten Runner-Spalten hervor.
+Function HighlightField(spalte, stepPos)
+	SetFillStyle(#FILLNONE)
+	SetFormStyle(#BORDER, $22DDEE, 2)
+	; 1px nach innen, damit der 2px-Rahmen sicher INNERHALB der Zelle bleibt
+	; (kein Ueberstand in den nicht mehr geloeschten schwarzen Rand).
+	Box(ColX(spalte) + 1, FieldTop(spalte, stepPos) + 1, colWidth - 2, rowHeight - 2, $22DDEE)
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #BLACK, 1)
+EndFunction
+
+; Feld inkl. der permanenten Spieler-Marker neu zeichnen (zum "Wegwischen" des
+; Runners waehrend der Bewegungs-Animation).
+Function DrawFieldBg(spalte, stepPos)
+	DrawFieldCell(spalte, stepPos)
+	If colOwner[spalte] <> 0 Then Return
+	Local markerSize = 16
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #WHITE, 1)
+	For Local plr = 1 To nr_player
+		If rowStore[RowKey(plr, spalte)] = stepPos
+			Local offsetX = 2
+			Local offsetY = 2
+			If plr = 2 Or plr = 4 Then offsetX = colWidth - markerSize - 2
+			If plr = 3 Or plr = 4 Then offsetY = rowHeight - markerSize - 2
+			Box(ColX(spalte) + offsetX, FieldTop(spalte, stepPos) + offsetY, markerSize, markerSize, spielerFarben[plr])
+		EndIf
+	Next
+	SetFormStyle(#BORDER, #BLACK, 1)
+EndFunction
+
+; Faerbt alle Felder einer Spalte in einer Farbe (fuer die Sieg-Animation).
+Function FillColumn(spalte, farbe)
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #BLACK, 1)
+	For Local s = 1 To ColHeight(spalte)
+		Box(ColX(spalte), FieldTop(spalte, s), colWidth, rowHeight, farbe)
+	Next
+EndFunction
+
+Function DrawBoard()
+	; KEIN Voll-Loeschen des Board-Bereichs: jedes Feld wird via DrawFieldCell
+	; komplett neu gezeichnet und deckt seine Zelle ab. Das fruehere
+	; "Box(0,0,panelX-2,768,#BLACK)" wirkte wie ein Cls -> sichtbarer Neuaufbau
+	; + Flackern, und sein (teils weisser) Rand erzeugte die Linie an der
+	; Board/Panel-Grenze. Der einmalige Board-Clear passiert jetzt in StartGame.
 	SetFont(#SANS, 22)
 
 	For Local colOffset = 0 To 10
@@ -429,19 +515,7 @@ Function DrawBoard()
 		Local fieldX    = ColX(spalte)
 
 		For Local stepPos = 1 To spaltenHoehe
-			Local fieldY   = FieldTop(spalte, stepPos)
-			Local fieldColor
-			If colOwner[spalte] > 0
-				; Gewonnene Spalte: komplett in der Farbe des Gewinners.
-				fieldColor = spielerFarben[colOwner[spalte]]
-			ElseIf stepPos = spaltenHoehe
-				fieldColor = #YELLOW          ; Zielfeld
-			Else
-				fieldColor = #RED
-			EndIf
-			SetFillStyle(#FILLCOLOR)
-			SetFormStyle(#BORDER, #BLACK, 1)
-			Box(fieldX, fieldY, colWidth, rowHeight, fieldColor)
+			DrawFieldCell(spalte, stepPos)
 		Next
 
 		; Reihennummer (groesser) ueber das oberste Feld der Spalte, der
@@ -489,16 +563,15 @@ Function DrawAllMarkers()
 		Next
 	Next
 
-	; Temporaere weisse Marker - schwarzer Rand für Kontrast (weiss auf
-	; gelbem Zielfeld bzw. ueber den Spielerfiguren sonst schlecht sichtbar).
-	SetFormStyle(#BORDER, #BLACK, 1)
+	; Temporaere Runner als weisse Kreise, jeweils mit hellem Rahmen um das
+	; aktive Feld (zeigt auf einen Blick die belegten Runner-Spalten).
 	For Local spalte = 2 To 12
 		If tempMarker[spalte] > 0
-			Local markerX = ColX(spalte) + (colWidth - markerSize) / 2
-			Local markerY = FieldTop(spalte, tempMarker[spalte]) + (rowHeight - markerSize) / 2
-			Box(markerX, markerY, markerSize, markerSize, #WHITE)
+			HighlightField(spalte, tempMarker[spalte])
+			DrawRunnerCircle(spalte, tempMarker[spalte])
 		EndIf
 	Next
+	SetFormStyle(#BORDER, #BLACK, 1)   ; Rahmenstil zuruecksetzen (war fuer Marker weiss)
 EndFunction
 
 ; ════════════════════════════════════════════════════════════════════════
@@ -507,7 +580,8 @@ EndFunction
 
 Function ClearPanel()
 	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 0, 1024 - panelX, 768, #BLACK)
+	SetFormStyle(#BORDER, #BLACK, 1)   ; eigener Rahmenstil - sonst zeichnet ein
+	Box(panelX, 0, 1024 - panelX, 768, #BLACK)   ; ambient weisser Rand die Linie
 EndFunction
 
 Function ShowScore(startzeile)
@@ -808,6 +882,126 @@ Function CommitTempMarker()
 EndFunction
 
 ; ════════════════════════════════════════════════════════════════════════
+; ANIMATION + BUST-RISIKO
+; ════════════════════════════════════════════════════════════════════════
+
+; Rueckt EINEN Runner um ein Feld vor (wie MoveCol), aber animiert: der Kreis
+; gleitet vom bisherigen Feld ins naechste, dann kurzer Klick. Nur die zwei
+; betroffenen Felder werden neu gezeichnet -> lokal, kaum Flackern.
+Function AnimatedMove(spalte)
+	If colOwner[spalte] > 0 Then Return
+	Local fromStep = tempMarker[spalte]
+	Local base = fromStep
+	If fromStep = 0 Then base = rowStore[RowKey(currentPl, spalte)]
+	Local toStep = base + 1
+	If toStep > ColHeight(spalte) Then toStep = ColHeight(spalte)
+
+	Local cx   = FieldMidX(spalte)
+	Local yTo  = FieldMidY(spalte, toStep)
+	Local yFrom
+	If base >= 1
+		yFrom = FieldMidY(spalte, base)          ; von Feld base hochgleiten
+	Else
+		; Neuer Runner: kurzer Pop INNERHALB des Zielfeldes. Wichtig: der Kreis
+		; darf nie unter das Feld ragen, sonst bleibt (ohne Board-Clear) ein
+		; weisser Sliver im schwarzen Rand stehen.
+		yFrom = FieldMidY(spalte, toStep) + 9
+	EndIf
+
+	Local frames = 5
+	For Local f = 1 To frames
+		If base >= 1 Then DrawFieldBg(spalte, base)   ; Kreis am Startfeld wegwischen
+		DrawFieldBg(spalte, toStep)                   ; Zielfeld sauber
+		Local yy = yFrom + (yTo - yFrom) * f / frames
+		SetFillStyle(#FILLCOLOR)
+		SetFormStyle(#BORDER, #BLACK, 2)
+		Circle(cx - 8, yy - 8, 8, #WHITE)
+		SetFormStyle(#BORDER, #BLACK, 1)
+		Wait(2)
+	Next
+
+	tempMarker[spalte] = toStep
+	Sfx(sndPlace)
+	HighlightField(spalte, toStep)
+	DrawRunnerCircle(spalte, toStep)
+EndFunction
+
+; Wendet eine Paarung animiert an (mirror von ApplyPair: beide Summen einzeln,
+; jeweils vorher auf Spielbarkeit pruefen - so ruecken Doppel korrekt 2x vor).
+Function AnimatedApplyPair(s1, s2)
+	If ColPlayable(s1) Then AnimatedMove(s1)
+	If ColPlayable(s2) Then AnimatedMove(s2)
+EndFunction
+
+; Wahrscheinlichkeit (in %), dass der NAECHSTE Wurf ein Bust wird - gegeben der
+; aktuelle Stand. Zaehlt ueber alle 6^4 = 1296 Wuerfe die, bei denen keine der
+; drei Paarungen eine spielbare Spalte trifft. play[] wird einmal vorberechnet.
+Function BustPercent()
+	Local play = {}
+	For Local c = 2 To 12
+		play[c] = ColPlayable(c)
+	Next
+	Local bust = 0
+	For Local d1 = 1 To 6
+		For Local d2 = 1 To 6
+			For Local d3 = 1 To 6
+				For Local d4 = 1 To 6
+					; spielbar = irgendeine der sechs Paar-Summen ist spielbar
+					If Not (play[d1 + d2] Or play[d3 + d4] Or play[d1 + d3] Or play[d2 + d4] Or play[d1 + d4] Or play[d2 + d3])
+						bust = bust + 1
+					EndIf
+				Next
+			Next
+		Next
+	Next
+	Return(Int(bust * 100 / 1296 + 0.5))
+EndFunction
+
+; Farbige Kachel rechts neben den Wuerfeln: aktuelles Bust-Risiko in Prozent.
+Function ShowBustRisk()
+	Local pct = BustPercent()
+	; Farbskala bewusst OHNE Gelb/Rot (die dominieren schon das Spielfeld):
+	; gruen = niedrig, orange = mittel, magenta/pink = hoch.
+	Local col = #GREEN
+	If pct >= 25 Then col = $FF8C00    ; Orange
+	If pct >= 50 Then col = $FF2E9E    ; Magenta/Pink
+	Local bx = panelX + 184
+	Local by = 42
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, col, 2)       ; farbiger Rahmen = deutliche Hervorhebung
+	Box(bx, by, 92, 46, #BLACK)
+	SetFormStyle(#BORDER, #BLACK, 1)
+	; WICHTIG: Textfarbe als Tabelle {Color=...} uebergeben. Als blosse Zahl
+	; ignoriert TextOut die Farbe auf dem echten Display (-> weiss).
+	SetFont(#SANS, 12)
+	TextOut(bx + 6, by + 4, T("bustRisk"), {Color = #GRAY})
+	SetFont(#SANS, 24)
+	TextOut(bx + 6, by + 17, ToString(pct) .. "%", {Color = col})
+EndFunction
+
+; Laesst die gewonnenen Spalten des Siegers ein paar Mal hell aufblinken.
+Function BlinkWinnerColumns()
+	Local cols = {}
+	Local n = 0
+	For Local c = 2 To 12
+		If colOwner[c] = winner
+			cols[n] = c
+			n = n + 1
+		EndIf
+	Next
+	For Local blink = 1 To 4
+		For Local i = 0 To n - 1
+			FillColumn(cols[i], #WHITE)
+		Next
+		Wait(7)
+		For Local i = 0 To n - 1
+			FillColumn(cols[i], spielerFarben[winner])
+		Next
+		Wait(7)
+	Next
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
 ; WUERFELN
 ; ════════════════════════════════════════════════════════════════════════
 
@@ -858,12 +1052,15 @@ EndFunction
 ; dann auf dem echten Ergebnis stehen.
 Function RollDiceAnimation(w1, w2, w3, w4)
 	PlaySample(sndDice, {Times = 0})   ; Rasseln in Endlosschleife, bis die Würfel stehen
-	For Local frame = 1 To 12
+	; Sichtbares Auswuerfeln, das zum Ende hin deutlich abbremst (ease-out).
+	; DrawFourDice zeichnet jeden Würfel als volle weisse Box neu -> kein Clear,
+	; kein Flackern.
+	For Local frame = 1 To 15
 		DrawFourDice(Rnd(6) + 1, Rnd(6) + 1, Rnd(6) + 1, Rnd(6) + 1)
-		Wait(2 + frame / 4)
+		Wait(2 + frame / 2)
 	Next
-	DrawFourDice(w1, w2, w3, w4)
-	StopSample(sndDice)                ; stoppt genau dann, wenn die Würfel gezeichnet sind
+	DrawFourDice(w1, w2, w3, w4)        ; Endergebnis stehen lassen
+	StopSample(sndDice)
 EndFunction
 
 Function DoThrowDice()
@@ -916,7 +1113,9 @@ Function DoThrowDice()
 	If anyPlayable = False
 		Sfx(sndBust)
 		SetFont(#SANS, 20)
-		TextOut(panelX, 105, "BUST!", #RED)
+		; Spielerfarbe + Tabellen-Form (als blosse Zahl wuerde die Farbe auf
+		; dem Display ignoriert -> weiss).
+		TextOut(panelX, 105, "BUST!", {Color = spielerFarben[currentPl]})
 		SetFont(#SANS, 16)
 		TextOut(panelX, 132, T("bustNoMove"), #WHITE)
 		TextOut(panelX, 155, T("bustLost"), #GRAY)
@@ -1010,13 +1209,15 @@ Function OnPairSelect(msg)
 		Return
 	EndIf
 
-	ApplyPair(s1, s2)
-	DrawBoard()
+	DrawBoard()                   ; Screen auf den restaurierten Vor-Zustand bringen
+	AnimatedApplyPair(s1, s2)     ; Runner animiert setzen/bewegen (+ Klick-Sound)
+	DrawBoard()                   ; sauberer Endzustand (Kreise + Highlights)
 
 	SetFillStyle(#FILLCOLOR)
 	Box(panelX, 86, 514, 16, #BLACK)
 	SetFont(#SANS, 15)
 	TextOut(panelX, 87, T("chosen") .. s1 .. " + " .. s2, #GREEN)
+	ShowBustRisk()
 	ShowPrimaryButton(T("bRollAgain"))
 	ShowEndTurnButton()
 EndFunction
@@ -1030,13 +1231,14 @@ Function OnColChoice(msg)
 
 	HideColChoice()
 	choicePending = False
-	MoveCol(spalte)
+	AnimatedMove(spalte)
 	DrawBoard()
 
 	SetFillStyle(#FILLCOLOR)
 	Box(panelX, 86, 514, 16, #BLACK)
 	SetFont(#SANS, 15)
 	TextOut(panelX, 87, T("chosenCol") .. ToString(spalte), #GREEN)
+	ShowBustRisk()
 	ShowPrimaryButton(T("bRollAgain"))
 	ShowEndTurnButton()
 EndFunction
@@ -1044,6 +1246,10 @@ EndFunction
 Function StartGame()
 	InitPlayers()
 	phase = "spielen"
+	; Board-Bereich einmalig sauber schwarz setzen (danach nur noch Felder).
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #BLACK, 1)
+	Box(0, 0, panelX - 2, 555, #BLACK)
 	DrawBoard()
 	ShowStatus()
 EndFunction
@@ -1097,6 +1303,7 @@ Function FinishTurn()
 
 	If winner > 0
 		Sfx(sndWin)
+		BlinkWinnerColumns()      ; die eroberten Spalten des Siegers aufblinken lassen
 		HideEndTurnButton()
 		HidePrimaryButton()
 		ClearPanel()
@@ -1181,10 +1388,11 @@ Function AiApplyPair(pidx)
 	selectedIdx = pidx
 	Local s1 = wurf[pidx].sum1
 	Local s2 = wurf[pidx].sum2
+	DrawBoard()                   ; Screen auf den restaurierten Vor-Zustand bringen
 	If PairNeedsChoice(s1, s2)
-		MoveCol(AiPickColumn(s1, s2))
+		AnimatedMove(AiPickColumn(s1, s2))
 	Else
-		ApplyPair(s1, s2)
+		AnimatedApplyPair(s1, s2)
 	EndIf
 	DrawBoard()
 	SetFillStyle(#FILLCOLOR)
