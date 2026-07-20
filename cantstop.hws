@@ -22,6 +22,9 @@
 ; Runner-Grafik (transparentes PNG) als Quelle fuer die Runner-Sprites.
 ; Sprites sind in Hollywood Software -> laeuft auch auf dem 68k-Amiga.
 @BRUSH 1, "runner.png", {LoadAlpha = True, Link = True}
+
+; Titelbild fuers Startmenue (810x555, deckend) - Link = in die Binaries eingebettet.
+@BRUSH 2, "title.png", {Link = True}
 	
 
 ; ════════════════════════════════════════════════════════════════════════
@@ -93,6 +96,8 @@ backActive  = False
 ; ── Dedizierte Buttons (feste IDs, getrennt vom WÄHLEN-Bereich 1..3) ──────
 endBtnId      = 99
 quitBtnId     = 98
+restartBtnId  = 97
+restartActive = False
 endBtnX       = panelX
 endBtnY       = 360
 endBtnW       = 230
@@ -182,6 +187,8 @@ strings["de_bNext"]       = "Nächster Spieler"
 strings["en_bNext"]       = "Next player"
 strings["de_bQuitWin"]    = "Beenden"
 strings["en_bQuitWin"]    = "Quit"
+strings["de_bRestart"]    = "Neu starten"
+strings["en_bRestart"]    = "Restart"
 strings["de_pair"]        = "Paar: "
 strings["en_pair"]        = "Pair: "
 strings["de_select"]      = "WÄHLEN"
@@ -352,6 +359,27 @@ Function ShowQuitButton()
 	DrawButtonBg(endBtnX, endBtnY, endBtnW, endBtnH, btnRedBase, btnRedLite)
 	SetFont(#SANS, 17)
 	TextOut(endBtnX + 12, endBtnY + 6, T("bQuitWin"), #WHITE)
+EndFunction
+
+; Gewinn-Screen: zwei Buttons - "Neu starten" (gruen, oben) und "Beenden" (rot).
+Function ShowWinButtons()
+	Local ry = endBtnY          ; 360
+	Local qy = primaryBtnY      ; 400
+	If restartActive = False
+		MakeButton(restartBtnId, #SIMPLEBUTTON, endBtnX, ry, endBtnW, endBtnH, {OnMouseUp = OnRestartGame})
+		restartActive = True
+	EndIf
+	DrawButtonBg(endBtnX, ry, endBtnW, endBtnH, btnGreenBase, btnGreenLite)
+	SetFont(#SANS, 17)
+	TextOut(endBtnX + 12, ry + 6, T("bRestart"), #WHITE)
+
+	If quitActive = False
+		MakeButton(quitBtnId, #SIMPLEBUTTON, endBtnX, qy, endBtnW, endBtnH, {OnMouseUp = OnQuitGame})
+		quitActive = True
+	EndIf
+	DrawButtonBg(endBtnX, qy, endBtnW, endBtnH, btnRedBase, btnRedLite)
+	SetFont(#SANS, 17)
+	TextOut(endBtnX + 12, qy + 6, T("bQuitWin"), #WHITE)
 EndFunction
 
 ; Zwei Buttons zur Auswahl der Spalte (unterhalb der Punktetabelle, oberhalb
@@ -753,26 +781,23 @@ Function ShowMenu()
 	phase = "menu"
 	ClearRunners()          ; keine Runner-Sprites ueber dem Vollbild-Menue
 	HideBackButton()
-	SetFillStyle(#FILLCOLOR)
-	SetFormStyle(#BORDER, #BLACK, 1)
-	Box(0, 0, 810, 555, #BLACK)
-	SetFont(#SANS, 46)
-	TextOut(#CENTER, 80, "CAN'T STOP", {Align = #CENTER, Color = #YELLOW})
-	SetFont(#SANS, 16)
-	TextOut(#CENTER, 155, T("subtitle"), {Align = #CENTER, Color = #GRAY})
+	; Titelbild als Vollbild-Hintergrund (810x555; enthaelt Titel + Untertitel).
+	DisplayBrush(2, 0, 0)
+	SetFont(#SANS, 20)
+	TextOut(#CENTER, 266, "by Philipp Lonke", {Align = #CENTER, Color = $E8CC78})
 
-	Local bx = 305
-	Local bw = 200
-	Local bh = 44
-	MakeButton(menuStartId, #SIMPLEBUTTON, bx, 230, bw, bh, {OnMouseUp = OnMenuStart})
-	DrawMenuButton(bx, 230, bw, bh, T("bStart"), btnGreenBase, btnGreenLite)
-	MakeButton(menuRulesId, #SIMPLEBUTTON, bx, 290, bw, bh, {OnMouseUp = OnMenuRules})
-	DrawMenuButton(bx, 290, bw, bh, T("bRules"), btnBlueBase, btnBlueLite)
-	MakeButton(menuEndId, #SIMPLEBUTTON, bx, 350, bw, bh, {OnMouseUp = OnMenuEnd})
-	DrawMenuButton(bx, 350, bw, bh, T("bQuit"), btnRedBase, btnRedLite)
+	Local bx = 295
+	Local bw = 220
+	Local bh = 42
+	MakeButton(menuStartId, #SIMPLEBUTTON, bx, 312, bw, bh, {OnMouseUp = OnMenuStart})
+	DrawMenuButton(bx, 312, bw, bh, T("bStart"), btnGreenBase, btnGreenLite)
+	MakeButton(menuRulesId, #SIMPLEBUTTON, bx, 362, bw, bh, {OnMouseUp = OnMenuRules})
+	DrawMenuButton(bx, 362, bw, bh, T("bRules"), btnBlueBase, btnBlueLite)
+	MakeButton(menuEndId, #SIMPLEBUTTON, bx, 412, bw, bh, {OnMouseUp = OnMenuEnd})
+	DrawMenuButton(bx, 412, bw, bh, T("bQuit"), btnRedBase, btnRedLite)
 	; Sprachumschalter (zeigt aktuelle Sprache; Klick wechselt DE/EN)
-	MakeButton(menuLangId, #SIMPLEBUTTON, bx, 415, bw, 36, {OnMouseUp = OnLangToggle})
-	DrawMenuButton(bx, 415, bw, 36, T("langLabel") .. ": " .. T("langName"), btnBlueBase, btnBlueLite)
+	MakeButton(menuLangId, #SIMPLEBUTTON, bx, 468, bw, bh, {OnMouseUp = OnLangToggle})
+	DrawMenuButton(bx, 468, bw, bh, T("langLabel") .. ": " .. T("langName"), btnBlueBase, btnBlueLite)
 	menuActive = True
 EndFunction
 
@@ -1300,6 +1325,15 @@ Function OnColChoice(msg)
 EndFunction
 
 Function StartGame()
+	; Voller Frisch-Start (erste Partie UND "Neu starten" via Menue): Zustaende,
+	; die InitPlayers nicht abdeckt, hier zuruecksetzen - sonst blockiert z.B. ein
+	; noch gesetztes winner>0 den naechsten Zug.
+	winner        = 0
+	currentPl     = 1
+	gewuerfelt    = False
+	selectedIdx   = -1
+	choicePending = False
+	aiThinking    = False
 	InitPlayers()
 	phase = "spielen"
 	; Board-Bereich einmalig sauber schwarz setzen (danach nur noch Felder).
@@ -1369,7 +1403,7 @@ Function FinishTurn()
 		If isComputer[winner] Then sieger$ = T("computer")
 		TextOut(panelX, 290, sieger$ .. ToString(winner), spielerFarben[winner])
 		TextOut(panelX, 322, T("wins"), spielerFarben[winner])
-		ShowQuitButton()
+		ShowWinButtons()
 		phase = "ende"
 		Return
 	EndIf
@@ -1379,6 +1413,28 @@ EndFunction
 
 Function OnQuitGame(msg)
 	End()
+EndFunction
+
+; "Neu starten" auf dem Gewinn-Screen: kompletten Zustand zuruecksetzen und ein
+; frisches Spiel mit denselben Spielereinstellungen beginnen. InitPlayers()
+; (via StartGame) setzt rowStore/tempMarker/colOwner/gameReady zurueck; winner,
+; currentPl und die Wurf-Flags muessen hier zusaetzlich zurueckgesetzt werden.
+Function RestartGame()
+	; Gewinn-Screen-Buttons entfernen und zurueck ins Startmenue. Der eigentliche
+	; Zustands-Reset passiert beim naechsten Spielstart (StartGame).
+	If restartActive
+		DeleteButton(restartBtnId)
+		restartActive = False
+	EndIf
+	If quitActive
+		DeleteButton(quitBtnId)
+		quitActive = False
+	EndIf
+	ShowMenu()
+EndFunction
+
+Function OnRestartGame(msg)
+	RestartGame()
 EndFunction
 
 ; ════════════════════════════════════════════════════════════════════════
