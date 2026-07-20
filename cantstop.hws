@@ -1420,6 +1420,16 @@ EndFunction
 
 ; Entscheidet, ob die KI stoppt (sichert) oder weiterwuerfelt (Risiko).
 Function AiShouldStop(rollCount)
+	; Solange noch ein Runner frei ist (weniger als 3 aktive Spalten), wuerfelt
+	; der Computer weiter - er soll erst alle drei Runner setzen, bevor er ans
+	; Aufhoeren denkt. Das rollCount-Netz verhindert nur einen theoretisch
+	; endlosen Zug (falls dauerhaft dieselben zwei Spalten getroffen werden und
+	; nie ein dritter Runner aufgeht).
+	If CountTempCols() < 3
+		Return(rollCount >= 20)
+	EndIf
+
+	; Ab hier sind alle drei Runner aktiv -> normale Fortschritts-/Risikobewertung.
 	Local progress = 0
 	Local fertige  = 0
 	For Local col = 2 To 12
@@ -1430,10 +1440,7 @@ Function AiShouldStop(rollCount)
 	Next
 	If fertige > 0 Then Return(True)            ; fertige Spalte(n) unbedingt sichern
 	If rollCount >= 12 Then Return(True)        ; Sicherheitsnetz gegen Endlos-Zug
-	Local runners = CountTempCols()
-	Local schwelle = 5
-	If runners >= 3 Then schwelle = 8          ; mit 3 Runnern etwas mutiger
-	If progress >= schwelle Then Return(True)
+	If progress >= 8 Then Return(True)          ; genug erspielt -> sichern
 	If Rnd(100) < 8 Then Return(True)           ; etwas Varianz
 	Return(False)
 EndFunction
