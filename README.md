@@ -13,8 +13,9 @@ A clone of the classic push-your-luck dice game **Can't Stop**, written in
 - **Bust-risk indicator:** shows the exact probability that your next roll
   busts, colour-coded (green / orange / magenta) and aware of how many
   runners you still have free
-- Runners shown as white circles with a highlight frame on your active
-  columns; captured columns take the owner's colour
+- Runners are white-circle **sprites** (flicker-free movement over a static
+  board) with a highlight frame on your active columns; captured columns take
+  the owner's colour
 - Animated dice roll and runner moves, with sound effects
   (roll / bust / place / win) — native 8SVX audio on Amiga
 - Winner's columns blink on victory
@@ -27,19 +28,23 @@ A clone of the classic push-your-luck dice game **Can't Stop**, written in
 | `cantstop.hws` | Hollywood source code |
 | `cantstop.exe` | Windows binary (with embedded die icon) |
 | `cantstop68k` | Amiga (68k) binary |
-| `cantstop68k.info` | Amiga Workbench icon (die) for the 68k binary |
+| `cantstop68k.info` | Amiga Workbench icon (colour die) + `NOLEGACYAUDIO` tooltype |
+| `runner.png` | Runner sprite graphic (transparent PNG, embedded in the binaries) |
 | `dice.wav`, `bust.wav`, `win.wav`, `place.wav` | Sound effects (Windows) |
 | `dice.8svx`, `bust.8svx`, `win.8svx`, `place.8svx` | Sound effects (Amiga 8SVX) |
 
 ## Running
 
 - **Windows:** run `cantstop.exe`
-- **Amiga (68k):** run `cantstop68k` (keep `cantstop68k.info` next to it
-  so Workbench shows the die icon)
-- **From source:** open `cantstop.hws` with Hollywood. The sound files must
-  sit next to the script — the `.wav` files for a Windows/desktop build, the
-  `.8svx` files for an Amiga build (the script picks the right set per target
-  via `@IF #HW_AMIGA`).
+- **Amiga (68k):** run `cantstop68k` (keep `cantstop68k.info` next to it so
+  Workbench shows the die icon). Sound uses AHI; the icon's `NOLEGACYAUDIO`
+  tooltype selects Hollywood's new AHI driver, which is required for
+  AHI-over-emulation setups (e.g. AmiKit / WinUAE). From a Shell, launch with
+  `-nolegacyaudio` instead.
+- **From source:** open `cantstop.hws` with Hollywood. Keep `runner.png` and
+  the sound files next to the script — the `.wav` files for a Windows/desktop
+  build, the `.8svx` files for an Amiga build (the script picks the right set
+  per target via `@IF #HW_AMIGA`).
 
 ## How to play (short)
 

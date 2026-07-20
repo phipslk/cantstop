@@ -1,6 +1,7 @@
 # Nur das Spiel selbst wird versioniert - Experimente/Kopien/Archive raus.
 *.zip
-cantstop - Kopie.hws
+*Kopie*
+flackertest.hws
 cantstop_complete_source.zip
 algo2.hws
 algorithmus.hws

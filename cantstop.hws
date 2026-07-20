@@ -1,7 +1,7 @@
 ﻿@APPTITLE "Can't Stop"
 @APPAUTHOR "Philipp Lonke"
 @APPCOPYRIGHT "(C) Copyright 2026 by Philipp Lonke"
-@APPVERSION "$VER: Can't Stop 0.1 beta"
+@APPVERSION "$VER: Can't Stop 1.0"
 @APPDESCRIPTION "A Can't Stop clone"
 
 @DISPLAY {Width = 810, Height = 555, Color = #BLACK, Mode = "Windowed"}
@@ -18,6 +18,10 @@
 	@SAMPLE 103, "win.wav"
 	@SAMPLE 104, "place.wav"
 @ENDIF
+
+; Runner-Grafik (transparentes PNG) als Quelle fuer die Runner-Sprites.
+; Sprites sind in Hollywood Software -> laeuft auch auf dem 68k-Amiga.
+@BRUSH 1, "runner.png", {LoadAlpha = True, Link = True}
 	
 
 ; ════════════════════════════════════════════════════════════════════════
@@ -257,10 +261,9 @@ Function T(key$)
 	Return(strings[lang .. "_" .. key$])
 EndFunction
 
-; Spielt einen vorgeladenen Soundeffekt (@SAMPLE) ab.
-Function Sfx(id)
-	PlaySample(id)
-EndFunction
+;Function Sfx(id)
+;	PlaySample(id)
+;EndFunction
 
 Function ColToIdx(spalte)
 	Return(spalte - 2)
@@ -502,6 +505,11 @@ Function FillColumn(spalte, farbe)
 EndFunction
 
 Function DrawBoard()
+	; Runner-Sprites vor dem Hintergrund-Neuzeichnen entfernen (sonst speichern
+	; sie einen veralteten Hintergrund). BeginRefresh/EndRefresh macht den
+	; gesamten Brett-Neuaufbau flackerfrei (ein einziger Blit).
+	ClearRunners()
+	BeginRefresh()
 	; KEIN Voll-Loeschen des Board-Bereichs: jedes Feld wird via DrawFieldCell
 	; komplett neu gezeichnet und deckt seine Zelle ab. Das fruehere
 	; "Box(0,0,panelX-2,768,#BLACK)" wirkte wie ein Cls -> sichtbarer Neuaufbau
@@ -528,6 +536,8 @@ Function DrawBoard()
 	Next
 
 	DrawAllMarkers()
+	EndRefresh()
+	SyncRunners()
 EndFunction
 
 ; ════════════════════════════════════════════════════════════════════════
@@ -563,15 +573,62 @@ Function DrawAllMarkers()
 		Next
 	Next
 
-	; Temporaere Runner als weisse Kreise, jeweils mit hellem Rahmen um das
-	; aktive Feld (zeigt auf einen Blick die belegten Runner-Spalten).
+	; Aktive Runner-Spalten hervorheben (heller Rahmen). Der Runner selbst ist
+	; jetzt ein Sprite (siehe SyncRunners) und wird nicht mehr hier gezeichnet.
 	For Local spalte = 2 To 12
 		If tempMarker[spalte] > 0
 			HighlightField(spalte, tempMarker[spalte])
-			DrawRunnerCircle(spalte, tempMarker[spalte])
 		EndIf
 	Next
 	SetFormStyle(#BORDER, #BLACK, 1)   ; Rahmenstil zuruecksetzen (war fuer Marker weiss)
+EndFunction
+
+; ════════════════════════════════════════════════════════════════════════
+; RUNNER-SPRITES
+; ════════════════════════════════════════════════════════════════════════
+; Aktive Runner sind Sprites: immer vorne, Hintergrund wird beim Bewegen
+; automatisch restauriert -> kein Neuzeichnen des Bretts noetig. Sprite-ID =
+; Spaltennummer (2..12), Quelle ist der transparente Brush 1 (runner.png).
+
+runnerBrushId = 1
+runnerShown   = {}          ; wird das Sprite fuer Spalte c gerade angezeigt?
+
+Function InitRunnerSprites()
+	For Local c = 2 To 12
+		CreateSprite(c, #BRUSH, runnerBrushId)
+		runnerShown[c] = False
+	Next
+EndFunction
+
+; Zentriert das Sprite einer Spalte auf ihr aktuelles Feld.
+Function ShowRunner(spalte, stepPos)
+	DisplaySprite(spalte, FieldMidX(spalte) - 10, FieldMidY(spalte, stepPos) - 10)
+	runnerShown[spalte] = True
+EndFunction
+
+; Blendet die Sprites passend zu tempMarker[] ein/aus (nach jedem Brett-Neu-
+; zeichnen). Sprites sind immer vorne, liegen also korrekt ueber dem Brett.
+Function SyncRunners()
+	For Local c = 2 To 12
+		If tempMarker[c] > 0
+			ShowRunner(c, tempMarker[c])
+		ElseIf runnerShown[c]
+			RemoveSprite(c)
+			runnerShown[c] = False
+		EndIf
+	Next
+EndFunction
+
+; Entfernt alle Runner-Sprites (vor Vollbild-Screens und vor jedem Brett-Neu-
+; zeichnen, damit kein veralteter Hintergrund unter einem Sprite gespeichert
+; bleibt).
+Function ClearRunners()
+	For Local c = 2 To 12
+		If runnerShown[c]
+			RemoveSprite(c)
+			runnerShown[c] = False
+		EndIf
+	Next
 EndFunction
 
 ; ════════════════════════════════════════════════════════════════════════
@@ -694,6 +751,7 @@ EndFunction
 
 Function ShowMenu()
 	phase = "menu"
+	ClearRunners()          ; keine Runner-Sprites ueber dem Vollbild-Menue
 	HideBackButton()
 	SetFillStyle(#FILLCOLOR)
 	SetFormStyle(#BORDER, #BLACK, 1)
@@ -720,6 +778,7 @@ EndFunction
 
 Function ShowRules()
 	phase = "regeln"
+	ClearRunners()          ; keine Runner-Sprites ueber dem Vollbild
 	HideMenuButtons()
 	SetFillStyle(#FILLCOLOR)
 	SetFormStyle(#BORDER, #BLACK, 1)
@@ -908,22 +967,18 @@ Function AnimatedMove(spalte)
 		yFrom = FieldMidY(spalte, toStep) + 9
 	EndIf
 
-	Local frames = 5
-	For Local f = 1 To frames
-		If base >= 1 Then DrawFieldBg(spalte, base)   ; Kreis am Startfeld wegwischen
-		DrawFieldBg(spalte, toStep)                   ; Zielfeld sauber
-		Local yy = yFrom + (yTo - yFrom) * f / frames
-		SetFillStyle(#FILLCOLOR)
-		SetFormStyle(#BORDER, #BLACK, 2)
-		Circle(cx - 8, yy - 8, 8, #WHITE)
-		SetFormStyle(#BORDER, #BLACK, 1)
-		Wait(2)
-	Next
+	; Runner-Sprite von seinem bisherigen Feld ins Zielfeld gleiten lassen.
+	; MoveSprite restauriert den Hintergrund automatisch -> kein Flackern und
+	; kein Neuzeichnen der Felder. Das folgende DrawBoard() (im Aufrufer) setzt
+	; anschliessend die Highlights sauber.
+	Local xSprite = FieldMidX(spalte) - 10
+	DisplaySprite(spalte, xSprite, yFrom - 10)     ; sicher am Startpunkt sichtbar
+	runnerShown[spalte] = True
+	MoveSprite(spalte, xSprite, yFrom - 10, xSprite, yTo - 10, {Speed = 4})
 
 	tempMarker[spalte] = toStep
-	Sfx(sndPlace)
-	HighlightField(spalte, toStep)
-	DrawRunnerCircle(spalte, toStep)
+;	Sfx(sndPlace)
+	PlaySample(sndPlace)
 EndFunction
 
 ; Wendet eine Paarung animiert an (mirror von ApplyPair: beide Summen einzeln,
@@ -1111,7 +1166,8 @@ Function DoThrowDice()
 	RollDiceAnimation(wuerfel1, wuerfel2, wuerfel3, wuerfel4)
 
 	If anyPlayable = False
-		Sfx(sndBust)
+		;Sfx(sndBust)
+		PlaySample(sndBust)
 		SetFont(#SANS, 20)
 		; Spielerfarbe + Tabellen-Form (als blosse Zahl wuerde die Farbe auf
 		; dem Display ignoriert -> weiss).
@@ -1302,7 +1358,8 @@ Function FinishTurn()
 	DrawBoard()
 
 	If winner > 0
-		Sfx(sndWin)
+		;Sfx(sndWin)
+		PlaySample(sndWin)
 		BlinkWinnerColumns()      ; die eroberten Spalten des Siegers aufblinken lassen
 		HideEndTurnButton()
 		HidePrimaryButton()
@@ -1431,6 +1488,7 @@ EndFunction
 ; START
 ; ════════════════════════════════════════════════════════════════════════
 
+InitRunnerSprites()      ; Runner-Sprites (aus runner.png) einmalig erzeugen
 ShowMenu()
 
 ; Alle Aktionen laufen ueber Buttons (Menue/Würfeln/Setzen/Zug beenden/
