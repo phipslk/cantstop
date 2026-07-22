@@ -99,9 +99,9 @@ quitBtnId     = 98
 restartBtnId  = 97
 restartActive = False
 endBtnX       = panelX
-endBtnY       = 360
-endBtnW       = 230
-endBtnH       = 28
+endBtnY       = 450
+endBtnW       = 290
+endBtnH       = 36
 endTurnActive = False
 quitActive    = False
 
@@ -119,9 +119,9 @@ choiceCol2    = 0
 primaryBtnId  = 30
 primaryActive = False
 primaryBtnX   = panelX
-primaryBtnY   = 400
-primaryBtnW   = 230   ; identisch zu endBtnW ("Setzen und Zug beenden")
-primaryBtnH   = 28
+primaryBtnY   = 490
+primaryBtnW   = 290   ; identisch zu endBtnW ("Setzen und Zug beenden")
+primaryBtnH   = 36
 
 ; ── Knopf-Farben (Basis + heller Glanzstreifen oben) ──────────────────────
 btnGreenBase = $2E9E52
@@ -179,7 +179,7 @@ strings["de_compTurn"]    = "Computer ist am Zug ..."
 strings["en_compTurn"]    = "Computer is thinking ..."
 strings["de_bRoll"]       = "Würfeln"
 strings["en_bRoll"]       = "Roll dice"
-strings["de_bRollAgain"]  = "Setzen und weiter würfeln"
+strings["de_bRollAgain"]  = "Setzen & weiter würfeln"
 strings["en_bRollAgain"]  = "Place & roll again"
 strings["de_bEndTurn"]    = "Setzen und Zug beenden"
 strings["en_bEndTurn"]    = "Place & end turn"
@@ -207,8 +207,8 @@ strings["de_compChooses"] = "Computer wählt: "
 strings["en_compChooses"] = "Computer chooses: "
 strings["de_chosenCol"]   = "Gewählt: Spalte "
 strings["en_chosenCol"]   = "Chosen: column "
-strings["de_choicePrompt"] = "Nur 1 Runner frei - Spalte wählen:"
-strings["en_choicePrompt"] = "Only 1 runner free - choose column:"
+strings["de_choicePrompt"] = "Nur 1 Runner frei - Spalte:"
+strings["en_choicePrompt"] = "Only 1 runner free - column:"
 strings["de_choicePair1"] = "Paar "
 strings["en_choicePair1"] = "Pair "
 strings["de_choicePair2"] = " - Spalte wählen"
@@ -222,36 +222,30 @@ strings["de_rules"] = {
 	"Ziel: Als Erster 3 Spalten erobern.",
 	"",
 	"- 3 weisse Runner pro Zug, max. 3 Spalten aktiv.",
-	"- 4 Würfel zu 2 Paaren kombinieren (Summen 2-12),",
-	"  eine Paarung wählen; beide Summen rücken vor",
-	"  (gleiche Summe = zwei Schritte).",
+	"- 4 Würfel zu 2 Paaren kombinieren; eine Paarung wählen,",
+	"beide Summen rücken vor (gleiche Summe = zwei Schritte).",
 	"- Eine neue Spalte kostet einen Runner.",
-	"- Kannst du mit einer Paarung zwei Läufer setzen/",
-	"  bewegen, musst du beide nehmen - du darfst aber",
-	"  gezielt eine mit nur einem Läufer wählen.",
-	"- Nach dem Setzen: weiter würfeln (Risiko) oder",
-	"  Zug beenden und Fortschritt sichern.",
-	"- Keine Figur setzbar = BUST: Zugfortschritt weg!",
-	"- Runner ganz oben + Zug beenden = Spalte gehört",
-	"  dir und ist dann für alle gesperrt.",
+	"- Zwei Läufer möglich? Dann musst du beide bewegen -",
+	"gezielt nur einen zu bewegen ist aber erlaubt.",
+	"- Nach dem Setzen: weiter würfeln oder Zug beenden.",
+	"- Keine Figur setzbar = BUST: Zugfortschritt ist weg!",
+	"- Runner ganz oben + Zug beenden = Spalte gehört dir,",
+	"sie ist dann für alle gesperrt.",
 	"- Wer zuerst 3 Spalten besitzt, gewinnt."
 }
 strings["en_rules"] = {
 	"Goal: Be the first to claim 3 columns.",
 	"",
 	"- 3 white runners per turn, max. 3 columns active.",
-	"- Roll 4 dice, form 2 pairs (sums 2-12), pick one",
-	"  pairing; both sums advance one step",
-	"  (same sum = two steps).",
+	"- Roll 4 dice, form 2 pairs (sums 2-12); pick one pairing,",
+	"both sums advance one step (same sum = two steps).",
 	"- Opening a new column uses one runner.",
-	"- If a pairing lets you move two runners, you must",
-	"  move both - but you may deliberately pick one",
-	"  that moves only a single runner.",
-	"- After placing: roll again (risk) or end turn",
-	"  to bank your progress.",
-	"- No legal move = BUST: turn progress is lost!",
-	"- Runner at the top + end turn = you claim the",
-	"  column (then closed for everyone).",
+	"- Can move two runners? Then you must move both -",
+	"but picking just one to move is allowed.",
+	"- After placing: roll again (risk) or end your turn.",
+	"- No legal move = BUST: this turn's progress is lost!",
+	"- Runner at the top + end turn = you claim the column,",
+	"then it is closed for everyone.",
 	"- First to own 3 columns wins."
 }
 
@@ -340,8 +334,8 @@ Function ShowEndTurnButton()
 		endTurnActive = True
 	EndIf
 	DrawButtonBg(endBtnX, endBtnY, endBtnW, endBtnH, btnRedBase, btnRedLite)
-	SetFont(#SANS, 14)
-	TextOut(endBtnX + 10, endBtnY + 8, T("bEndTurn"), #WHITE)
+	SetFont(#SANS, 22)
+	TextOut(endBtnX + 14, endBtnY + 7, T("bEndTurn"), {Color = #WHITE})
 EndFunction
 
 Function HideEndTurnButton()
@@ -357,8 +351,8 @@ Function ShowQuitButton()
 		quitActive = True
 	EndIf
 	DrawButtonBg(endBtnX, endBtnY, endBtnW, endBtnH, btnRedBase, btnRedLite)
-	SetFont(#SANS, 17)
-	TextOut(endBtnX + 12, endBtnY + 6, T("bQuitWin"), #WHITE)
+	SetFont(#SANS, 22)
+	TextOut(endBtnX + 14, endBtnY + 7, T("bQuitWin"), {Color = #WHITE})
 EndFunction
 
 ; Gewinn-Screen: zwei Buttons - "Neu starten" (gruen, oben) und "Beenden" (rot).
@@ -370,16 +364,16 @@ Function ShowWinButtons()
 		restartActive = True
 	EndIf
 	DrawButtonBg(endBtnX, ry, endBtnW, endBtnH, btnGreenBase, btnGreenLite)
-	SetFont(#SANS, 17)
-	TextOut(endBtnX + 12, ry + 6, T("bRestart"), #WHITE)
+	SetFont(#SANS, 22)
+	TextOut(endBtnX + 14, ry + 7, T("bRestart"), {Color = #WHITE})
 
 	If quitActive = False
 		MakeButton(quitBtnId, #SIMPLEBUTTON, endBtnX, qy, endBtnW, endBtnH, {OnMouseUp = OnQuitGame})
 		quitActive = True
 	EndIf
 	DrawButtonBg(endBtnX, qy, endBtnW, endBtnH, btnRedBase, btnRedLite)
-	SetFont(#SANS, 17)
-	TextOut(endBtnX + 12, qy + 6, T("bQuitWin"), #WHITE)
+	SetFont(#SANS, 22)
+	TextOut(endBtnX + 14, qy + 7, T("bQuitWin"), {Color = #WHITE})
 EndFunction
 
 ; Zwei Buttons zur Auswahl der Spalte (unterhalb der Punktetabelle, oberhalb
@@ -393,30 +387,32 @@ Function ShowColChoice(c1, c2)
 	HideEndTurnButton()
 	HidePrimaryButton()
 	If choiceActive = False
-		MakeButton(choiceBtnId1, #SIMPLEBUTTON, panelX,       370, 80, 24, {OnMouseUp = OnColChoice})
-		MakeButton(choiceBtnId2, #SIMPLEBUTTON, panelX + 100, 370, 80, 24, {OnMouseUp = OnColChoice})
+		MakeButton(choiceBtnId1, #SIMPLEBUTTON, panelX,       380, 100, 32, {OnMouseUp = OnColChoice})
+		MakeButton(choiceBtnId2, #SIMPLEBUTTON, panelX + 120, 380, 100, 32, {OnMouseUp = OnColChoice})
 		choiceActive = True
 	EndIf
 	choicePending = True
 	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 340, 514, 86, #BLACK)
-	SetFont(#SANS, 15)
-	TextOut(panelX, 345, T("choicePrompt"), #YELLOW)
-	DrawButtonBg(panelX,       370, 80, 24, btnBlueBase, btnBlueLite)
-	DrawButtonBg(panelX + 100, 370, 80, 24, btnBlueBase, btnBlueLite)
-	SetFont(#SANS, 17)
-	TextOut(panelX + 32,  377, ToString(c1), #WHITE)
-	TextOut(panelX + 132, 377, ToString(c2), #WHITE)
+	Box(panelX, 338, 514, 98, #BLACK)
+	SetFont(#SANS, 22)
+	TextOut(panelX, 342, T("choicePrompt"), {Color = #YELLOW})
+	DrawButtonBg(panelX,       380, 100, 32, btnBlueBase, btnBlueLite)
+	DrawButtonBg(panelX + 120, 380, 100, 32, btnBlueBase, btnBlueLite)
+	SetFont(#SANS, 22)
+	TextOut(panelX + 42,  386, ToString(c1), {Color = #WHITE})
+	TextOut(panelX + 162, 386, ToString(c2), {Color = #WHITE})
 EndFunction
 
 Function HideColChoice()
+	; Nur loeschen, wenn die Spaltenwahl wirklich aktiv war - sonst wuerde der
+	; Loeschbereich (y338..436) faelschlich die Punktetabelle abschneiden.
 	If choiceActive
 		DeleteButton(choiceBtnId1)
 		DeleteButton(choiceBtnId2)
 		choiceActive = False
+		SetFillStyle(#FILLCOLOR)
+		Box(panelX, 338, 514, 98, #BLACK)
 	EndIf
-	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 340, 514, 86, #BLACK)
 EndFunction
 
 ; Ein einzelner Button, dessen Beschriftung je nach Spielzustand wechselt.
@@ -428,16 +424,8 @@ Function ShowPrimaryButton(beschriftung$)
 		primaryActive = True
 	EndIf
 	DrawButtonBg(primaryBtnX, primaryBtnY, primaryBtnW, primaryBtnH, btnGreenBase, btnGreenLite)
-	; Lange Beschriftung ("Setzen und weiter würfeln") kleiner setzen, damit
-	; sie in den (so breiten wie "Zug beenden") Kasten passt.
-	Local yOff = 6
-	If StrLen(beschriftung$) > 16
-		SetFont(#SANS, 14)
-		yOff = 8
-	Else
-		SetFont(#SANS, 17)
-	EndIf
-	TextOut(primaryBtnX + 10, primaryBtnY + yOff, beschriftung$, #WHITE)
+	SetFont(#SANS, 22)
+	TextOut(primaryBtnX + 14, primaryBtnY + 7, beschriftung$, {Color = #WHITE})
 EndFunction
 
 Function HidePrimaryButton()
@@ -560,7 +548,7 @@ Function DrawBoard()
 		Local numStr$   = ToString(spalte)
 		Local numOffX   = 6
 		If StrLen(numStr$) > 1 Then numOffX = 11
-		TextOut(fieldX + colWidth / 2 - numOffX, topFieldY - 24, numStr$, #WHITE)
+		TextOut(fieldX + colWidth / 2 - numOffX, topFieldY - 24, numStr$, {Color = #WHITE})
 	Next
 
 	DrawAllMarkers()
@@ -670,9 +658,9 @@ Function ClearPanel()
 EndFunction
 
 Function ShowScore(startzeile)
-	SetFont(#SANS, 15)
-	TextOut(panelX, startzeile, T("columnsWon"), #GRAY)
-	Local textY = startzeile + 20
+	SetFont(#SANS, 22)
+	TextOut(panelX, startzeile, T("columnsWon"), {Color = #GRAY})
+	Local textY = startzeile + 30
 	For Local plr = 1 To nr_player
 		Local wonCount = 0
 		For Local spalte = 2 To 12
@@ -680,21 +668,22 @@ Function ShowScore(startzeile)
 		Next
 		Local wer$ = T("player")
 		If isComputer[plr] Then wer$ = T("computer")
-		TextOut(panelX, textY, wer$ .. ToString(plr) .. ": " .. ToString(wonCount) .. " / 3", spielerFarben[plr])
-		textY = textY + 18
+		TextOut(panelX, textY, wer$ .. ToString(plr) .. ":", {Color = spielerFarben[plr]})
+		TextOut(panelX + 170, textY, ToString(wonCount) .. " / 3", {Color = spielerFarben[plr]})
+		textY = textY + 28
 	Next
 EndFunction
 
 ; "Spieler X" plus ein Farbquadrat in der Spielerfarbe (weisser Rand für
 ; Kontrast, z.B. bei #MAROON). Wird oben im Panel angezeigt.
 Function ShowPlayerHeader()
-	SetFont(#SANS, 18)
+	SetFont(#SANS, 22)
 	Local wer$ = T("player")
 	If isComputer[currentPl] Then wer$ = T("computer")
-	TextOut(panelX, 10, wer$ .. ToString(currentPl), spielerFarben[currentPl])
+	TextOut(panelX, 10, wer$ .. ToString(currentPl), {Color = spielerFarben[currentPl]})
 	SetFillStyle(#FILLCOLOR)
 	SetFormStyle(#BORDER, #WHITE, 1)
-	Box(panelX + 150, 12, 20, 20, spielerFarben[currentPl])
+	Box(panelX + 172, 11, 22, 22, spielerFarben[currentPl])
 	; Rahmenstil zurücksetzen, sonst erhalten nachfolgende gefuellte
 	; (Loesch-)Boxen im Panel einen weissen Rand -> unnoetige Linien.
 	SetFormStyle(#BORDER, #BLACK, 1)
@@ -708,8 +697,8 @@ Function ShowStatus()
 	HideEndTurnButton()
 	If isComputer[currentPl]
 		HidePrimaryButton()
-		SetFont(#SANS, 16)
-		TextOut(panelX, 300, T("compTurn"), #GRAY)
+		SetFont(#SANS, 22)
+		TextOut(panelX, 300, T("compTurn"), {Color = #GRAY})
 	Else
 		ShowPrimaryButton(T("bRoll"))
 	EndIf
@@ -724,18 +713,18 @@ Function AskPlayers()
 	SetFormStyle(#BORDER, #BLACK, 1)
 	Box(0, 0, 810, 555, #BLACK)
 	SetFont(#SANS, 30)
-	TextOut(#CENTER, 90, T("newGame"), {Align = #CENTER, Color = #YELLOW})
+	TextOut(#CENTER, 110, T("newGame"), {Align = #CENTER, Color = #YELLOW})
 
-	SetFont(#SANS, 18)
-	TextOut(200, 190, T("qHumans"), #WHITE)
-	Locate(200, 222)
+	SetFont(#SANS, 22)
+	TextOut(#CENTER, 210, T("qHumans"), {Align = #CENTER, Color = #WHITE})
+	Locate(398, 252)
 	Local nh = ToNumber(InKeyStr(#NUMERICAL, 1, False, True))
 	If nh < 1 Then nh = 1
 	If nh > 4 Then nh = 4
 
 	Local maxC = 4 - nh
-	TextOut(200, 275, T("qComputers") .. ToString(maxC) .. ")?", #WHITE)
-	Locate(200, 307)
+	TextOut(#CENTER, 320, T("qComputers") .. ToString(maxC) .. ")?", {Align = #CENTER, Color = #WHITE})
+	Locate(398, 362)
 	Local nc = ToNumber(InKeyStr(#NUMERICAL, 1, False, True))
 	If nc < 0 Then nc = 0
 	If nc > maxC Then nc = maxC
@@ -771,7 +760,7 @@ EndFunction
 ; Menue-Knopf mit grob zentriertem Text (Breite ueber StrLen geschaetzt).
 Function DrawMenuButton(bx, by, bw, bh, label$, basis, glanz)
 	DrawButtonBg(bx, by, bw, bh, basis, glanz)
-	SetFont(#SANS, 18)
+	SetFont(#SANS, 22)
 	; Buttons sind auf Display-Mitte platziert -> #CENTER zentriert das Label
 	; genau ueber dem Button.
 	TextOut(#CENTER, by + 10, label$, {Align = #CENTER, Color = #WHITE})
@@ -783,7 +772,7 @@ Function ShowMenu()
 	HideBackButton()
 	; Titelbild als Vollbild-Hintergrund (810x555; enthaelt Titel + Untertitel).
 	DisplayBrush(2, 0, 0)
-	SetFont(#SANS, 20)
+	SetFont(#SANS, 22)
 	TextOut(#CENTER, 266, "by Philipp Lonke", {Align = #CENTER, Color = $E8CC78})
 
 	Local bx = 295
@@ -795,9 +784,13 @@ Function ShowMenu()
 	DrawMenuButton(bx, 362, bw, bh, T("bRules"), btnBlueBase, btnBlueLite)
 	MakeButton(menuEndId, #SIMPLEBUTTON, bx, 412, bw, bh, {OnMouseUp = OnMenuEnd})
 	DrawMenuButton(bx, 412, bw, bh, T("bQuit"), btnRedBase, btnRedLite)
-	; Sprachumschalter (zeigt aktuelle Sprache; Klick wechselt DE/EN)
+	; Sprachumschalter zeigt die ANDERE Sprache (in dieser Sprache), auf die ein
+	; Klick umschaltet: bei Deutsch -> "Language: English", bei Englisch ->
+	; "Sprache: Deutsch".
+	Local otherLng$ = "en"
+	If lang = "en" Then otherLng$ = "de"
 	MakeButton(menuLangId, #SIMPLEBUTTON, bx, 468, bw, bh, {OnMouseUp = OnLangToggle})
-	DrawMenuButton(bx, 468, bw, bh, T("langLabel") .. ": " .. T("langName"), btnBlueBase, btnBlueLite)
+	DrawMenuButton(bx, 468, bw, bh, strings[otherLng$ .. "_langLabel"] .. ": " .. strings[otherLng$ .. "_langName"], btnBlueBase, btnBlueLite)
 	menuActive = True
 EndFunction
 
@@ -811,12 +804,18 @@ Function ShowRules()
 	SetFont(#SANS, 30)
 	TextOut(#CENTER, 25, T("rulesTitle"), {Align = #CENTER, Color = #YELLOW})
 
-	SetFont(#SANS, 16)
+	SetFont(#SANS, 22)
 	Local rules = strings[lang .. "_rules"]
-	Local y = 78
+	Local y = 66
+	Local gruen = False
 	For Local i = 0 To TableItems(rules) - 1
-		If rules[i] <> "" Then TextOut(45, y, rules[i], #WHITE)
-		y = y + 25
+		If rules[i] <> ""
+			Local zeilenFarbe = #WHITE
+			If gruen Then zeilenFarbe = #GREEN
+			TextOut(#CENTER, y, rules[i], {Align = #CENTER, Color = zeilenFarbe})
+			gruen = (gruen = False)          ; abwechselnd weiss/gruen (nur sichtbare Zeilen)
+		EndIf
+		y = y + 30
 	Next
 
 	MakeButton(menuBackId, #SIMPLEBUTTON, 305, 495, 200, 40, {OnMouseUp = OnRulesBack})
@@ -1193,13 +1192,13 @@ Function DoThrowDice()
 	If anyPlayable = False
 		;Sfx(sndBust)
 		PlaySample(sndBust)
-		SetFont(#SANS, 20)
+		SetFont(#SANS, 22)
 		; Spielerfarbe + Tabellen-Form (als blosse Zahl wuerde die Farbe auf
 		; dem Display ignoriert -> weiss).
 		TextOut(panelX, 105, "BUST!", {Color = spielerFarben[currentPl]})
-		SetFont(#SANS, 16)
-		TextOut(panelX, 132, T("bustNoMove"), #WHITE)
-		TextOut(panelX, 155, T("bustLost"), #GRAY)
+		SetFont(#SANS, 22)
+		TextOut(panelX, 134, T("bustNoMove"), {Color = #WHITE})
+		TextOut(panelX, 162, T("bustLost"), {Color = #GRAY})
 		ResetTempMarker()
 		HideEndTurnButton()
 		DrawBoard()
@@ -1209,32 +1208,32 @@ Function DoThrowDice()
 		Return
 	EndIf
 
-	Local textY = 105
+	Local textY = 120
 	buttonCount = 0
 	For Local pairIdx = 0 To wurfAnzahl - 1
 		Local choosable = PairPlayable(wurf[pairIdx].sum1, wurf[pairIdx].sum2)
 		Local textColor = #WHITE
 		If choosable = False Then textColor = #GRAY
-		SetFont(#SANS, 17)
-		TextOut(panelX, textY, T("pair") .. wurf[pairIdx].sum1 .. " + " .. wurf[pairIdx].sum2, textColor)
+		SetFont(#SANS, 22)
+		TextOut(panelX, textY, T("pair") .. wurf[pairIdx].sum1 .. " + " .. wurf[pairIdx].sum2, {Color = textColor})
 		If choosable
 			; Button-ID = pairIdx+1, damit OnPairSelect (msg.id-1) das Paar
 			; unabhaengig von Lücken korrekt zurückrechnet.
 			Local btnId = pairIdx + 1
-			DrawButtonBg(panelX + 140, textY, 80, 24, btnBlueBase, btnBlueLite)
-			SetFont(#SANS, 15)
-			TextOut(panelX + 152, textY + 4, T("select"), #WHITE)
-			MakeButton(btnId, #SIMPLEBUTTON, panelX + 140, textY, 80, 24, {OnMouseUp = OnPairSelect})
+			DrawButtonBg(panelX + 160, textY, 104, 30, btnBlueBase, btnBlueLite)
+			SetFont(#SANS, 22)
+			TextOut(panelX + 170, textY + 4, T("select"), {Color = #WHITE})
+			MakeButton(btnId, #SIMPLEBUTTON, panelX + 160, textY, 104, 30, {OnMouseUp = OnPairSelect})
 			buttonIds[buttonCount] = btnId
 			buttonCount = buttonCount + 1
 		EndIf
-		textY = textY + 28
+		textY = textY + 36
 	Next
 
-	SetFont(#SANS, 15)
-	TextOut(panelX, textY + 12, T("hint1"), #GRAY)
-	TextOut(panelX, textY + 29, T("hint2"), #GRAY)
-	ShowScore(textY + 52)
+	SetFont(#SANS, 22)
+	TextOut(panelX, textY + 16, T("hint1"), {Color = #GRAY})
+	TextOut(panelX, textY + 44, T("hint2"), {Color = #GRAY})
+	ShowScore(textY + 78)
 	; Vor der Paarwahl gibt es keine Aktion (kein Würfeln, kein Beenden) ->
 	; beide Aktionsknoepfe ausblenden.
 	HidePrimaryButton()
@@ -1283,9 +1282,9 @@ Function OnPairSelect(msg)
 	If PairNeedsChoice(s1, s2)
 		DrawBoard()
 		SetFillStyle(#FILLCOLOR)
-		Box(panelX, 86, 514, 16, #BLACK)
-		SetFont(#SANS, 15)
-		TextOut(panelX, 87, T("choicePair1") .. s1 .. " + " .. s2 .. T("choicePair2"), #GREEN)
+		Box(panelX, 84, 514, 30, #BLACK)
+		SetFont(#SANS, 22)
+		TextOut(panelX, 87, T("choicePair1") .. s1 .. " + " .. s2 .. T("choicePair2"), {Color = #GREEN})
 		ShowColChoice(s1, s2)
 		Return
 	EndIf
@@ -1295,9 +1294,9 @@ Function OnPairSelect(msg)
 	DrawBoard()                   ; sauberer Endzustand (Kreise + Highlights)
 
 	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 86, 514, 16, #BLACK)
-	SetFont(#SANS, 15)
-	TextOut(panelX, 87, T("chosen") .. s1 .. " + " .. s2, #GREEN)
+	Box(panelX, 84, 514, 30, #BLACK)
+	SetFont(#SANS, 22)
+	TextOut(panelX, 87, T("chosen") .. s1 .. " + " .. s2, {Color = #YELLOW})
 	ShowBustRisk()
 	ShowPrimaryButton(T("bRollAgain"))
 	ShowEndTurnButton()
@@ -1316,9 +1315,9 @@ Function OnColChoice(msg)
 	DrawBoard()
 
 	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 86, 514, 16, #BLACK)
-	SetFont(#SANS, 15)
-	TextOut(panelX, 87, T("chosenCol") .. ToString(spalte), #GREEN)
+	Box(panelX, 84, 514, 30, #BLACK)
+	SetFont(#SANS, 22)
+	TextOut(panelX, 87, T("chosenCol") .. ToString(spalte), {Color = #YELLOW})
 	ShowBustRisk()
 	ShowPrimaryButton(T("bRollAgain"))
 	ShowEndTurnButton()
@@ -1398,11 +1397,11 @@ Function FinishTurn()
 		HideEndTurnButton()
 		HidePrimaryButton()
 		ClearPanel()
-		SetFont(#SANS, 24)
+		SetFont(#SANS, 22)
 		Local sieger$ = T("player")
 		If isComputer[winner] Then sieger$ = T("computer")
-		TextOut(panelX, 290, sieger$ .. ToString(winner), spielerFarben[winner])
-		TextOut(panelX, 322, T("wins"), spielerFarben[winner])
+		TextOut(panelX, 290, sieger$ .. ToString(winner), {Color = spielerFarben[winner]})
+		TextOut(panelX, 322, T("wins"), {Color = spielerFarben[winner]})
 		ShowWinButtons()
 		phase = "ende"
 		Return
@@ -1516,9 +1515,9 @@ Function AiApplyPair(pidx)
 	EndIf
 	DrawBoard()
 	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 86, 514, 16, #BLACK)
+	Box(panelX, 84, 514, 30, #BLACK)
 	SetFont(#SANS, 15)
-	TextOut(panelX, 87, T("compChooses") .. s1 .. " + " .. s2, #GREEN)
+	TextOut(panelX, 87, T("compChooses") .. s1 .. " + " .. s2, {Color = #GREEN})
 EndFunction
 
 ; Spielt einen kompletten Computer-Zug (blockierend, mit Pausen zum Zusehen).
