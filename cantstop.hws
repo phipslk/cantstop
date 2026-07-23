@@ -84,6 +84,7 @@ buttonCount = 0
 buttonIds   = {}   ; IDs der tatsaechlich erzeugten WÄHLEN-Buttons
 selectedIdx = -1
 phase       = "menu"    ; menu -> regeln -> (Abfrage) -> spielen/bust/ende
+asking      = False     ; True waehrend der Spielerzahl-Eingabe (blockt ESC-Handler)
 
 ; ── Startmenue- und Regeln-Buttons ────────────────────────────────────────
 menuStartId = 40
@@ -145,8 +146,6 @@ lang    = "de"          ; "de" oder "en"
 ; NICHT zuverlaessig (Zwischenzugriff liefert Kopie) - daher nur eine Ebene.
 strings = {}
 
-strings["de_subtitle"]    = "Das Würfel-Wagnis-Spiel"
-strings["en_subtitle"]    = "A Push-Your-Luck Dice Game"
 strings["de_bStart"]      = "Spiel starten"
 strings["en_bStart"]      = "Start Game"
 strings["de_bRules"]      = "Regeln"
@@ -168,6 +167,8 @@ strings["de_qHumans"]     = "Menschliche Spieler (1-4)?"
 strings["en_qHumans"]     = "Human players (1-4)?"
 strings["de_qComputers"]  = "Computer-Gegner (0-"
 strings["en_qComputers"]  = "Computer opponents (0-"
+strings["de_maxInfo"]     = "Maximal 4 Spieler gesamt (Menschen + Computer)."
+strings["en_maxInfo"]     = "Maximum of 4 players in total (humans + computers)."
 
 strings["de_player"]      = "Spieler "
 strings["en_player"]      = "Player "
@@ -231,7 +232,8 @@ strings["de_rules"] = {
 	"- Keine Figur setzbar = BUST: Zugfortschritt ist weg!",
 	"- Runner ganz oben + Zug beenden = Spalte gehört dir,",
 	"sie ist dann für alle gesperrt.",
-	"- Wer zuerst 3 Spalten besitzt, gewinnt."
+	"- Wer zuerst 3 Spalten besitzt, gewinnt.",
+	"Tipp: Rechtsklick = Hauptknopf, ESC = zurück ins Menü."
 }
 strings["en_rules"] = {
 	"Goal: Be the first to claim 3 columns.",
@@ -246,7 +248,8 @@ strings["en_rules"] = {
 	"- No legal move = BUST: this turn's progress is lost!",
 	"- Runner at the top + end turn = you claim the column,",
 	"then it is closed for everyone.",
-	"- First to own 3 columns wins."
+	"- First to own 3 columns wins.",
+	"Tip: right-click = main button, ESC = back to menu."
 }
 
 ; ════════════════════════════════════════════════════════════════════════
@@ -261,10 +264,6 @@ EndFunction
 Function T(key$)
 	Return(strings[lang .. "_" .. key$])
 EndFunction
-
-;Function Sfx(id)
-;	PlaySample(id)
-;EndFunction
 
 Function ColToIdx(spalte)
 	Return(spalte - 2)
@@ -328,6 +327,12 @@ Function DrawButtonBg(bx, by, bw, bh, basis, glanz)
 	SetFormStyle(#BORDER, #BLACK, 1)         ; Rahmenstil zurücksetzen
 EndFunction
 
+; Zentriert eine Knopf-Beschriftung exakt ueber der Knopfflaeche (TextWidth
+; misst mit dem aktuell gesetzten Font - vorher SetFont aufrufen!).
+Function BtnLabel(bx, bw, ty, label$)
+	TextOut(bx + (bw - TextWidth(label$)) / 2, ty, label$, {Color = #WHITE})
+EndFunction
+
 Function ShowEndTurnButton()
 	If endTurnActive = False
 		MakeButton(endBtnId, #SIMPLEBUTTON, endBtnX, endBtnY, endBtnW, endBtnH, {OnMouseUp = OnEndTurn})
@@ -335,7 +340,7 @@ Function ShowEndTurnButton()
 	EndIf
 	DrawButtonBg(endBtnX, endBtnY, endBtnW, endBtnH, btnRedBase, btnRedLite)
 	SetFont(#SANS, 22)
-	TextOut(endBtnX + 14, endBtnY + 7, T("bEndTurn"), {Color = #WHITE})
+	BtnLabel(endBtnX, endBtnW, endBtnY + 7, T("bEndTurn"))
 EndFunction
 
 Function HideEndTurnButton()
@@ -345,27 +350,17 @@ Function HideEndTurnButton()
 	EndIf
 EndFunction
 
-Function ShowQuitButton()
-	If quitActive = False
-		MakeButton(quitBtnId, #SIMPLEBUTTON, endBtnX, endBtnY, endBtnW, endBtnH, {OnMouseUp = OnQuitGame})
-		quitActive = True
-	EndIf
-	DrawButtonBg(endBtnX, endBtnY, endBtnW, endBtnH, btnRedBase, btnRedLite)
-	SetFont(#SANS, 22)
-	TextOut(endBtnX + 14, endBtnY + 7, T("bQuitWin"), {Color = #WHITE})
-EndFunction
-
 ; Gewinn-Screen: zwei Buttons - "Neu starten" (gruen, oben) und "Beenden" (rot).
 Function ShowWinButtons()
-	Local ry = endBtnY          ; 360
-	Local qy = primaryBtnY      ; 400
+	Local ry = endBtnY          ; oberer Knopf (450)
+	Local qy = primaryBtnY      ; unterer Knopf (490)
 	If restartActive = False
 		MakeButton(restartBtnId, #SIMPLEBUTTON, endBtnX, ry, endBtnW, endBtnH, {OnMouseUp = OnRestartGame})
 		restartActive = True
 	EndIf
 	DrawButtonBg(endBtnX, ry, endBtnW, endBtnH, btnGreenBase, btnGreenLite)
 	SetFont(#SANS, 22)
-	TextOut(endBtnX + 14, ry + 7, T("bRestart"), {Color = #WHITE})
+	BtnLabel(endBtnX, endBtnW, ry + 7, T("bRestart"))
 
 	If quitActive = False
 		MakeButton(quitBtnId, #SIMPLEBUTTON, endBtnX, qy, endBtnW, endBtnH, {OnMouseUp = OnQuitGame})
@@ -373,7 +368,7 @@ Function ShowWinButtons()
 	EndIf
 	DrawButtonBg(endBtnX, qy, endBtnW, endBtnH, btnRedBase, btnRedLite)
 	SetFont(#SANS, 22)
-	TextOut(endBtnX + 14, qy + 7, T("bQuitWin"), {Color = #WHITE})
+	BtnLabel(endBtnX, endBtnW, qy + 7, T("bQuitWin"))
 EndFunction
 
 ; Zwei Buttons zur Auswahl der Spalte (unterhalb der Punktetabelle, oberhalb
@@ -393,14 +388,14 @@ Function ShowColChoice(c1, c2)
 	EndIf
 	choicePending = True
 	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 338, 514, 98, #BLACK)
+	Box(panelX, 338, 810 - panelX, 98, #BLACK)
 	SetFont(#SANS, 22)
 	TextOut(panelX, 342, T("choicePrompt"), {Color = #YELLOW})
 	DrawButtonBg(panelX,       380, 100, 32, btnBlueBase, btnBlueLite)
 	DrawButtonBg(panelX + 120, 380, 100, 32, btnBlueBase, btnBlueLite)
 	SetFont(#SANS, 22)
-	TextOut(panelX + 42,  386, ToString(c1), {Color = #WHITE})
-	TextOut(panelX + 162, 386, ToString(c2), {Color = #WHITE})
+	BtnLabel(panelX,       100, 386, ToString(c1))
+	BtnLabel(panelX + 120, 100, 386, ToString(c2))
 EndFunction
 
 Function HideColChoice()
@@ -411,7 +406,7 @@ Function HideColChoice()
 		DeleteButton(choiceBtnId2)
 		choiceActive = False
 		SetFillStyle(#FILLCOLOR)
-		Box(panelX, 338, 514, 98, #BLACK)
+		Box(panelX, 338, 810 - panelX, 98, #BLACK)
 	EndIf
 EndFunction
 
@@ -425,7 +420,7 @@ Function ShowPrimaryButton(beschriftung$)
 	EndIf
 	DrawButtonBg(primaryBtnX, primaryBtnY, primaryBtnW, primaryBtnH, btnGreenBase, btnGreenLite)
 	SetFont(#SANS, 22)
-	TextOut(primaryBtnX + 14, primaryBtnY + 7, beschriftung$, {Color = #WHITE})
+	BtnLabel(primaryBtnX, primaryBtnW, primaryBtnY + 7, beschriftung$)
 EndFunction
 
 Function HidePrimaryButton()
@@ -469,17 +464,6 @@ Function DrawFieldCell(spalte, stepPos)
 	EndIf
 EndFunction
 
-; Temporaerer Runner als weisser Kreis. Circle() nimmt die obere linke Ecke des
-; Huellrechtecks -> Mittelpunkt minus Radius.
-Function DrawRunnerCircle(spalte, stepPos)
-	Local cx = FieldMidX(spalte)
-	Local cy = FieldMidY(spalte, stepPos)
-	SetFillStyle(#FILLCOLOR)
-	SetFormStyle(#BORDER, #BLACK, 2)
-	Circle(cx - 8, cy - 8, 8, #WHITE)
-	SetFormStyle(#BORDER, #BLACK, 1)
-EndFunction
-
 ; Heller Rahmen um ein aktives Feld - hebt die belegten Runner-Spalten hervor.
 Function HighlightField(spalte, stepPos)
 	SetFillStyle(#FILLNONE)
@@ -488,26 +472,6 @@ Function HighlightField(spalte, stepPos)
 	; (kein Ueberstand in den nicht mehr geloeschten schwarzen Rand).
 	Box(ColX(spalte) + 1, FieldTop(spalte, stepPos) + 1, colWidth - 2, rowHeight - 2, $22DDEE)
 	SetFillStyle(#FILLCOLOR)
-	SetFormStyle(#BORDER, #BLACK, 1)
-EndFunction
-
-; Feld inkl. der permanenten Spieler-Marker neu zeichnen (zum "Wegwischen" des
-; Runners waehrend der Bewegungs-Animation).
-Function DrawFieldBg(spalte, stepPos)
-	DrawFieldCell(spalte, stepPos)
-	If colOwner[spalte] <> 0 Then Return
-	Local markerSize = 16
-	SetFillStyle(#FILLCOLOR)
-	SetFormStyle(#BORDER, #WHITE, 1)
-	For Local plr = 1 To nr_player
-		If rowStore[RowKey(plr, spalte)] = stepPos
-			Local offsetX = 2
-			Local offsetY = 2
-			If plr = 2 Or plr = 4 Then offsetX = colWidth - markerSize - 2
-			If plr = 3 Or plr = 4 Then offsetY = rowHeight - markerSize - 2
-			Box(ColX(spalte) + offsetX, FieldTop(spalte, stepPos) + offsetY, markerSize, markerSize, spielerFarben[plr])
-		EndIf
-	Next
 	SetFormStyle(#BORDER, #BLACK, 1)
 EndFunction
 
@@ -542,13 +506,11 @@ Function DrawBoard()
 			DrawFieldCell(spalte, stepPos)
 		Next
 
-		; Reihennummer (groesser) ueber das oberste Feld der Spalte, der
-		; Diagonale folgend. Zweistellige Zahlen etwas weiter nach links.
+		; Reihennummer ueber dem obersten Feld der Spalte, exakt zentriert
+		; (TextWidth misst mit dem oben gesetzten Font).
 		Local topFieldY = FieldTop(spalte, spaltenHoehe)
 		Local numStr$   = ToString(spalte)
-		Local numOffX   = 6
-		If StrLen(numStr$) > 1 Then numOffX = 11
-		TextOut(fieldX + colWidth / 2 - numOffX, topFieldY - 24, numStr$, {Color = #WHITE})
+		TextOut(fieldX + (colWidth - TextWidth(numStr$)) / 2, topFieldY - 24, numStr$, {Color = #WHITE})
 	Next
 
 	DrawAllMarkers()
@@ -654,7 +616,7 @@ EndFunction
 Function ClearPanel()
 	SetFillStyle(#FILLCOLOR)
 	SetFormStyle(#BORDER, #BLACK, 1)   ; eigener Rahmenstil - sonst zeichnet ein
-	Box(panelX, 0, 1024 - panelX, 768, #BLACK)   ; ambient weisser Rand die Linie
+	Box(panelX, 0, 810 - panelX, 555, #BLACK)   ; ambient weisser Rand die Linie
 EndFunction
 
 Function ShowScore(startzeile)
@@ -690,6 +652,9 @@ Function ShowPlayerHeader()
 EndFunction
 
 Function ShowStatus()
+	; Ein Refresh-Block: der Panel-Neuaufbau erscheint als EIN Blit statt
+	; Clear + einzelne Texte (kein Kurzblitzen des leeren Panels).
+	BeginRefresh()
 	ClearPanel()
 	ShowPlayerHeader()
 	ShowScore(110)
@@ -702,6 +667,7 @@ Function ShowStatus()
 	Else
 		ShowPrimaryButton(T("bRoll"))
 	EndIf
+	EndRefresh()
 EndFunction
 
 ; ════════════════════════════════════════════════════════════════════════
@@ -709,31 +675,43 @@ EndFunction
 ; ════════════════════════════════════════════════════════════════════════
 
 Function AskPlayers()
+	asking = True           ; ESC-Handler waehrend der Eingabe stilllegen
 	SetFillStyle(#FILLCOLOR)
 	SetFormStyle(#BORDER, #BLACK, 1)
 	Box(0, 0, 810, 555, #BLACK)
 	SetFont(#SANS, 30)
-	TextOut(#CENTER, 110, T("newGame"), {Align = #CENTER, Color = #YELLOW})
+	TextOut(#CENTER, 90, T("newGame"), {Align = #CENTER, Color = #YELLOW})
 
+	; Limit-Hinweis, damit klar ist, was die Abfrage akzeptiert.
 	SetFont(#SANS, 22)
-	TextOut(#CENTER, 210, T("qHumans"), {Align = #CENTER, Color = #WHITE})
-	Locate(398, 252)
+	TextOut(#CENTER, 152, T("maxInfo"), {Align = #CENTER, Color = #GRAY})
+
+	TextOut(#CENTER, 215, T("qHumans"), {Align = #CENTER, Color = #WHITE})
+	Locate(398, 253)
 	Local nh = ToNumber(InKeyStr(#NUMERICAL, 1, False, True))
 	If nh < 1 Then nh = 1
 	If nh > 4 Then nh = 4
+	; Akzeptierten (ggf. aufs Limit begrenzten) Wert anzeigen - die getippte
+	; Eingabe kann davon abweichen (z.B. "9" -> 4).
+	Box(340, 249, 130, 32, #BLACK)
+	TextOut(#CENTER, 253, ToString(nh), {Align = #CENTER, Color = #YELLOW})
 
 	Local maxC = 4 - nh
-	TextOut(#CENTER, 320, T("qComputers") .. ToString(maxC) .. ")?", {Align = #CENTER, Color = #WHITE})
-	Locate(398, 362)
+	TextOut(#CENTER, 325, T("qComputers") .. ToString(maxC) .. ")?", {Align = #CENTER, Color = #WHITE})
+	Locate(398, 363)
 	Local nc = ToNumber(InKeyStr(#NUMERICAL, 1, False, True))
 	If nc < 0 Then nc = 0
 	If nc > maxC Then nc = maxC
+	Box(340, 359, 130, 32, #BLACK)
+	TextOut(#CENTER, 363, ToString(nc), {Align = #CENTER, Color = #YELLOW})
+	Wait(20)                ; akzeptierte Werte kurz stehen lassen
 
 	nr_human  = nh
 	nr_player = nh + nc
 	For Local plr = 1 To nr_player
 		isComputer[plr] = (plr > nr_human)
 	Next
+	asking = False
 EndFunction
 
 ; ════════════════════════════════════════════════════════════════════════
@@ -807,15 +785,21 @@ Function ShowRules()
 	SetFont(#SANS, 22)
 	Local rules = strings[lang .. "_rules"]
 	Local y = 66
-	Local gruen = False
+	Local gruen = True   ; wird vor der ersten Regel getoggelt -> startet weiss
 	For Local i = 0 To TableItems(rules) - 1
 		If rules[i] <> ""
+			; Jede REGEL bekommt EINE Farbe (abwechselnd weiss/gruen). Eine neue
+			; Regel beginnt mit "-" oder einem Grossbuchstaben ("Ziel:", "Tipp:");
+			; kleingeschriebene Fortsetzungszeilen behalten die Farbe ihrer Regel.
+			Local ersterCode = Asc(rules[i])
+			If ersterCode = 45 Or (ersterCode >= 65 And ersterCode <= 90)
+				gruen = (gruen = False)
+			EndIf
 			Local zeilenFarbe = #WHITE
 			If gruen Then zeilenFarbe = #GREEN
 			TextOut(#CENTER, y, rules[i], {Align = #CENTER, Color = zeilenFarbe})
-			gruen = (gruen = False)          ; abwechselnd weiss/gruen (nur sichtbare Zeilen)
 		EndIf
-		y = y + 30
+		y = y + 28
 	Next
 
 	MakeButton(menuBackId, #SIMPLEBUTTON, 305, 495, 200, 40, {OnMouseUp = OnRulesBack})
@@ -938,15 +922,6 @@ Function MoveCol(spalte)
 	EndIf
 EndFunction
 
-Function ApplyPair(summe1, summe2)
-	; Beide Summen einzeln anwenden - auch wenn sie gleich sind (z.B. 5+5),
-	; dann rückt die Spalte korrekt um zwei Felder vor. ColPlayable wird vor
-	; jedem Zug neu geprueft (nach dem 1. Zug hat die Spalte einen Temp-Marker,
-	; bleibt also spielbar; die Hoehenbegrenzung passiert in MoveCol).
-	If ColPlayable(summe1) Then MoveCol(summe1)
-	If ColPlayable(summe2) Then MoveCol(summe2)
-EndFunction
-
 Function CommitTempMarker()
 	For Local spalte = 2 To 12
 		If tempMarker[spalte] > 0
@@ -1001,37 +976,73 @@ Function AnimatedMove(spalte)
 	MoveSprite(spalte, xSprite, yFrom - 10, xSprite, yTo - 10, {Speed = 4})
 
 	tempMarker[spalte] = toStep
-;	Sfx(sndPlace)
 	PlaySample(sndPlace)
 EndFunction
 
-; Wendet eine Paarung animiert an (mirror von ApplyPair: beide Summen einzeln,
-; jeweils vorher auf Spielbarkeit pruefen - so ruecken Doppel korrekt 2x vor).
+; Wendet eine Paarung an: beide Summen einzeln, jeweils vorher auf Spielbarkeit
+; pruefen - auch bei gleichen Summen (5+5), dann rueckt die Spalte zweimal vor.
+; ColPlayable wird vor jedem Teilzug neu geprueft (nach dem 1. Teilzug hat die
+; Spalte einen Temp-Marker, bleibt also spielbar; Hoehenlimit in AnimatedMove).
 Function AnimatedApplyPair(s1, s2)
 	If ColPlayable(s1) Then AnimatedMove(s1)
 	If ColPlayable(s2) Then AnimatedMove(s2)
 EndFunction
 
+; ── Vorberechnete Wuerfelkombinationen fuer BustPercent ──────────────────
+; Alle 126 sortierten Kombinationen (d1<=d2<=d3<=d4) mit der Anzahl ihrer
+; Permutationen (Gewichte, Summe = 1296). Reduziert die Bust-Berechnung von
+; 1296 auf 126 Schleifendurchlaeufe - auf einem 68k-Amiga deutlich spuerbar.
+comboA = {}
+comboB = {}
+comboC = {}
+comboD = {}
+comboN = {}
+comboCount = 0
+For cD1 = 1 To 6
+	For cD2 = cD1 To 6
+		For cD3 = cD2 To 6
+			For cD4 = cD3 To 6
+				; Vielfachheiten der Augenzahlen zaehlen -> Gewicht = 4!/(m1!*m2!*...)
+				cAnz = {0, 0, 0, 0, 0, 0, 0}
+				cAnz[cD1] = cAnz[cD1] + 1
+				cAnz[cD2] = cAnz[cD2] + 1
+				cAnz[cD3] = cAnz[cD3] + 1
+				cAnz[cD4] = cAnz[cD4] + 1
+				cGewicht = 24
+				For cF = 1 To 6
+					If cAnz[cF] = 2 Then cGewicht = cGewicht / 2
+					If cAnz[cF] = 3 Then cGewicht = cGewicht / 6
+					If cAnz[cF] = 4 Then cGewicht = cGewicht / 24
+				Next
+				comboA[comboCount] = cD1
+				comboB[comboCount] = cD2
+				comboC[comboCount] = cD3
+				comboD[comboCount] = cD4
+				comboN[comboCount] = cGewicht
+				comboCount = comboCount + 1
+			Next
+		Next
+	Next
+Next
+
 ; Wahrscheinlichkeit (in %), dass der NAECHSTE Wurf ein Bust wird - gegeben der
-; aktuelle Stand. Zaehlt ueber alle 6^4 = 1296 Wuerfe die, bei denen keine der
-; drei Paarungen eine spielbare Spalte trifft. play[] wird einmal vorberechnet.
+; aktuelle Stand. Iteriert die 126 vorberechneten Kombinationen (mit Gewichten)
+; statt aller 1296 Rohwuerfe; play[] wird einmal vorberechnet.
 Function BustPercent()
 	Local play = {}
 	For Local c = 2 To 12
 		play[c] = ColPlayable(c)
 	Next
 	Local bust = 0
-	For Local d1 = 1 To 6
-		For Local d2 = 1 To 6
-			For Local d3 = 1 To 6
-				For Local d4 = 1 To 6
-					; spielbar = irgendeine der sechs Paar-Summen ist spielbar
-					If Not (play[d1 + d2] Or play[d3 + d4] Or play[d1 + d3] Or play[d2 + d4] Or play[d1 + d4] Or play[d2 + d3])
-						bust = bust + 1
-					EndIf
-				Next
-			Next
-		Next
+	For Local i = 0 To comboCount - 1
+		Local da = comboA[i]
+		Local db = comboB[i]
+		Local dc = comboC[i]
+		Local dd = comboD[i]
+		; spielbar = irgendeine der sechs Paar-Summen ist spielbar
+		If Not (play[da + db] Or play[dc + dd] Or play[da + dc] Or play[db + dd] Or play[da + dd] Or play[db + dc])
+			bust = bust + comboN[i]
+		EndIf
 	Next
 	Return(Int(bust * 100 / 1296 + 0.5))
 EndFunction
@@ -1183,14 +1194,16 @@ Function DoThrowDice()
 		If PairPlayable(wurf[pairIdx].sum1, wurf[pairIdx].sum2) Then anyPlayable = True
 	Next
 
+	; Panel-Umbau vor der Animation als EIN Blit (kein Schwarz-Blitzen).
+	BeginRefresh()
 	ClearPanel()
 	ShowPlayerHeader()
 	HidePrimaryButton()
 	HideEndTurnButton()
+	EndRefresh()
 	RollDiceAnimation(wuerfel1, wuerfel2, wuerfel3, wuerfel4)
 
 	If anyPlayable = False
-		;Sfx(sndBust)
 		PlaySample(sndBust)
 		SetFont(#SANS, 22)
 		; Spielerfarbe + Tabellen-Form (als blosse Zahl wuerde die Farbe auf
@@ -1208,6 +1221,8 @@ Function DoThrowDice()
 		Return
 	EndIf
 
+	; Paar-Liste + Hinweise + Punktetabelle als EIN Blit zeichnen.
+	BeginRefresh()
 	Local textY = 120
 	buttonCount = 0
 	For Local pairIdx = 0 To wurfAnzahl - 1
@@ -1238,6 +1253,7 @@ Function DoThrowDice()
 	; beide Aktionsknoepfe ausblenden.
 	HidePrimaryButton()
 	HideEndTurnButton()
+	EndRefresh()
 EndFunction
 
 ; ════════════════════════════════════════════════════════════════════════
@@ -1282,7 +1298,7 @@ Function OnPairSelect(msg)
 	If PairNeedsChoice(s1, s2)
 		DrawBoard()
 		SetFillStyle(#FILLCOLOR)
-		Box(panelX, 84, 514, 30, #BLACK)
+		Box(panelX, 84, 810 - panelX, 30, #BLACK)
 		SetFont(#SANS, 22)
 		TextOut(panelX, 87, T("choicePair1") .. s1 .. " + " .. s2 .. T("choicePair2"), {Color = #GREEN})
 		ShowColChoice(s1, s2)
@@ -1294,7 +1310,7 @@ Function OnPairSelect(msg)
 	DrawBoard()                   ; sauberer Endzustand (Kreise + Highlights)
 
 	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 84, 514, 30, #BLACK)
+	Box(panelX, 84, 810 - panelX, 30, #BLACK)
 	SetFont(#SANS, 22)
 	TextOut(panelX, 87, T("chosen") .. s1 .. " + " .. s2, {Color = #YELLOW})
 	ShowBustRisk()
@@ -1315,7 +1331,7 @@ Function OnColChoice(msg)
 	DrawBoard()
 
 	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 84, 514, 30, #BLACK)
+	Box(panelX, 84, 810 - panelX, 30, #BLACK)
 	SetFont(#SANS, 22)
 	TextOut(panelX, 87, T("chosenCol") .. ToString(spalte), {Color = #YELLOW})
 	ShowBustRisk()
@@ -1370,6 +1386,22 @@ Function OnRightMouse(msg)
 	OnPrimaryAction(msg)
 EndFunction
 
+; ESC beendet nicht mehr sofort das Programm: im Menue = Ende, im Regel-Screen
+; = zurueck ins Menue, in einer Partie/auf dem Gewinn-Screen = Partie verwerfen
+; und zurueck ins Menue. Waehrend eines Computerzugs und waehrend der
+; Spielerzahl-Eingabe wird ESC ignoriert (blockierende Ablaeufe).
+Function OnGlobalKey(msg)
+	If msg.key <> "ESC" Then Return
+	If aiThinking Or asking Then Return
+	If phase = "menu"
+		End()
+	ElseIf phase = "regeln"
+		ShowMenu()
+	Else
+		LeaveToMenu()
+	EndIf
+EndFunction
+
 ; Wird ausschliesslich vom dedizierten "Zug beenden"-Button ausgeloest.
 ; Dadurch entfaellt der frueher noetige ignoreNextLeftClick-Hack: es gibt
 ; keinen globalen Linksklick-Handler mehr, der mit dem Button kollidiert.
@@ -1391,7 +1423,6 @@ Function FinishTurn()
 	DrawBoard()
 
 	If winner > 0
-		;Sfx(sndWin)
 		PlaySample(sndWin)
 		BlinkWinnerColumns()      ; die eroberten Spalten des Siegers aufblinken lassen
 		HideEndTurnButton()
@@ -1414,13 +1445,17 @@ Function OnQuitGame(msg)
 	End()
 EndFunction
 
-; "Neu starten" auf dem Gewinn-Screen: kompletten Zustand zuruecksetzen und ein
-; frisches Spiel mit denselben Spielereinstellungen beginnen. InitPlayers()
-; (via StartGame) setzt rowStore/tempMarker/colOwner/gameReady zurueck; winner,
-; currentPl und die Wurf-Flags muessen hier zusaetzlich zurueckgesetzt werden.
-Function RestartGame()
-	; Gewinn-Screen-Buttons entfernen und zurueck ins Startmenue. Der eigentliche
-	; Zustands-Reset passiert beim naechsten Spielstart (StartGame).
+; Verlaesst Partie oder Gewinn-Screen und kehrt ins Startmenue zurueck (alle
+; Spiel-Buttons entfernen). Der eigentliche Zustands-Reset passiert beim
+; naechsten Spielstart (StartGame). Genutzt vom "Neu starten"-Button UND vom
+; ESC-Handler.
+Function LeaveToMenu()
+	ClearButtons()
+	HideEndTurnButton()
+	HidePrimaryButton()
+	HideColChoice()
+	choicePending = False
+	gewuerfelt    = False
 	If restartActive
 		DeleteButton(restartBtnId)
 		restartActive = False
@@ -1433,7 +1468,7 @@ Function RestartGame()
 EndFunction
 
 Function OnRestartGame(msg)
-	RestartGame()
+	LeaveToMenu()
 EndFunction
 
 ; ════════════════════════════════════════════════════════════════════════
@@ -1474,29 +1509,27 @@ Function AiPickColumn(c1, c2)
 EndFunction
 
 ; Entscheidet, ob die KI stoppt (sichert) oder weiterwuerfelt (Risiko).
-Function AiShouldStop(rollCount)
-	; Solange noch ein Runner frei ist (weniger als 3 aktive Spalten), wuerfelt
-	; der Computer weiter - er soll erst alle drei Runner setzen, bevor er ans
-	; Aufhoeren denkt. Das rollCount-Netz verhindert nur einen theoretisch
-	; endlosen Zug (falls dauerhaft dieselben zwei Spalten getroffen werden und
-	; nie ein dritter Runner aufgeht).
-	If CountTempCols() < 3
-		Return(rollCount >= 20)
-	EndIf
+Function AiShouldStop()
+	; Vorgabe: solange nicht alle 3 Runner auf dem Feld stehen, wird IMMER
+	; weitergewuerfelt - kein Banking mit freiem Runner. Endlos wird das nicht:
+	; jeder Nicht-Bust-Wurf rueckt mindestens einen Runner vor, und die
+	; Spaltenhoehen sind endlich (irgendwann stehen alle 3 - oder Bust).
+	If CountTempCols() < 3 Then Return(False)
 
-	; Ab hier sind alle drei Runner aktiv -> normale Fortschritts-/Risikobewertung.
+	; Alle 3 Runner stehen: fertige Spalte(n) sofort sichern.
 	Local progress = 0
-	Local fertige  = 0
 	For Local col = 2 To 12
 		If tempMarker[col] > 0
 			progress = progress + (tempMarker[col] - rowStore[RowKey(currentPl, col)])
-			If tempMarker[col] >= ColHeight(col) Then fertige = fertige + 1
+			If tempMarker[col] >= ColHeight(col) Then Return(True)
 		EndIf
 	Next
-	If fertige > 0 Then Return(True)            ; fertige Spalte(n) unbedingt sichern
-	If rollCount >= 12 Then Return(True)        ; Sicherheitsnetz gegen Endlos-Zug
-	If progress >= 8 Then Return(True)          ; genug erspielt -> sichern
-	If Rnd(100) < 8 Then Return(True)           ; etwas Varianz
+
+	; Erwartungswert-Abwaegung mit dem ECHTEN Bust-Risiko (BustPercent): ein
+	; weiterer Wurf bringt im Schnitt ~2 Schritte, riskiert aber den gesamten
+	; Zug-Fortschritt. Stoppen, sobald Risiko * Fortschritt >= Chance * Zugewinn.
+	Local pct = BustPercent()
+	If pct * progress >= (100 - pct) * 2 Then Return(True)
 	Return(False)
 EndFunction
 
@@ -1515,19 +1548,18 @@ Function AiApplyPair(pidx)
 	EndIf
 	DrawBoard()
 	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 84, 514, 30, #BLACK)
-	SetFont(#SANS, 15)
-	TextOut(panelX, 87, T("compChooses") .. s1 .. " + " .. s2, {Color = #GREEN})
+	Box(panelX, 84, 810 - panelX, 30, #BLACK)
+	SetFont(#SANS, 22)
+	; Gelb wie beim Menschen: Gelb = getroffene Wahl (Gruen nur fuer Aufforderungen)
+	TextOut(panelX, 87, T("compChooses") .. s1 .. " + " .. s2, {Color = #YELLOW})
 EndFunction
 
 ; Spielt einen kompletten Computer-Zug (blockierend, mit Pausen zum Zusehen).
 Function PlayComputerTurn()
 	aiThinking = True
-	Local rollCount = 0
 	Repeat
 		Wait(25)                 ; kurze Pause vor dem Wurf
 		DoThrowDice()            ; Animation + Paare + Phase
-		rollCount = rollCount + 1
 		If phase = "bust"
 			Wait(60)             ; Bust kurz stehen lassen
 			aiThinking = False
@@ -1536,7 +1568,7 @@ Function PlayComputerTurn()
 		EndIf
 		AiApplyPair(AiPickPairIdx())
 		Wait(45)                 ; gewähltes Paar zeigen
-		If AiShouldStop(rollCount)
+		If AiShouldStop()
 			aiThinking = False
 			FinishTurn()         ; setzen + Zug beenden
 			Return
@@ -1554,13 +1586,13 @@ InitRunnerSprites()      ; Runner-Sprites (aus runner.png) einmalig erzeugen
 ShowMenu()
 
 ; Alle Aktionen laufen ueber Buttons (Menue/Würfeln/Setzen/Zug beenden/
-; WÄHLEN/Spalte wählen). Rechtsklick bleibt nur als optionaler Shortcut
-; für den Primaerknopf erhalten.
+; WÄHLEN/Spalte wählen). Rechtsklick bleibt als optionaler Shortcut für den
+; Primaerknopf erhalten; ESC geht kontextabhaengig zurueck (siehe OnGlobalKey).
 InstallEventHandler({
-	OnRightMouseUp = OnRightMouse
+	OnRightMouseUp = OnRightMouse,
+	OnKeyDown      = OnGlobalKey
 })
 
-EscapeQuit(True)
 Repeat
 	WaitEvent
 Forever
