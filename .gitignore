@@ -8,3 +8,7 @@ algorithmus.hws
 main.hws
 cantstop KI/
 cantstop.app/
+
+# Kommentierte Arbeitsfassung bleibt lokal; publiziert wird cantstop_release.hws (ohne ;-Kommentare)
+cantstop.hws
+strip_comments.py
