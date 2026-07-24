@@ -79,3 +79,17 @@ bust-risk tile helps you decide when to stop. A column you reach the top of
 and bank becomes yours — and closed for everyone.
 
 The in-game **Rules** screen explains everything in your selected language.
+
+## License
+
+The source code and assets in this repository are **source-available for
+reading only** — see [LICENSE](LICENSE). This is **not** open source: you may
+read the code, but not use, compile, modify, or redistribute it without
+permission.
+
+The compiled game on the [releases page](https://github.com/phipslk/cantstop/releases/latest)
+is **freeware** — free to download and play.
+
+*Can't Stop* is a dice board game designed by **Sid Sackson**. This project is
+an unofficial, non-commercial fan clone and is not affiliated with or endorsed
+by the game's designer or publishers.
