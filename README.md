@@ -82,14 +82,11 @@ The in-game **Rules** screen explains everything in your selected language.
 
 ## License
 
-The source code and assets in this repository are **source-available for
-reading only** — see [LICENSE](LICENSE). This is **not** open source: you may
-read the code, but not use, compile, modify, or redistribute it without
-permission.
-
-The compiled game on the [releases page](https://github.com/phipslk/cantstop/releases/latest)
-is **freeware** — free to download and play.
+Licensed under the **GNU General Public License v3.0** — see [LICENSE](LICENSE).
+You are free to use, study, share, and modify the code; if you distribute a
+modified version, it must also be released under the GPL-3.0.
 
 *Can't Stop* is a dice board game designed by **Sid Sackson**. This project is
 an unofficial, non-commercial fan clone and is not affiliated with or endorsed
-by the game's designer or publishers.
+by the game's designer or publishers. The GPL covers this repository's own code
+and assets only — not the "Can't Stop" name or game design.
