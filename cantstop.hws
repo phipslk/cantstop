@@ -114,6 +114,21 @@ sndBust  = 102
 sndWin   = 103
 sndPlace = 104
 
+@IF #HW_AMIGA
+menuFullId     = 45
+gameFullId     = 46
+gameFullActive = False
+fullscreenOn   = False
+menuFullX      = 295
+menuFullY      = 512
+menuFullW      = 220
+menuFullH      = 40
+gameFullX      = 0
+gameFullY      = 524
+gameFullH      = 26
+gameFullClearW = 200
+@ENDIF
+
 menuLangId = 44
 lang    = "de"
 
@@ -133,6 +148,12 @@ strings["de_rulesTitle"]  = "REGELN"
 strings["en_rulesTitle"]  = "RULES"
 strings["de_bBack"]       = "Zurück"
 strings["en_bBack"]       = "Back"
+@IF #HW_AMIGA
+strings["de_bFull"]       = "Vollbild"
+strings["en_bFull"]       = "Fullscreen"
+strings["de_bWindow"]     = "Fenster"
+strings["en_bWindow"]     = "Window"
+@ENDIF
 
 strings["de_newGame"]     = "NEUES SPIEL"
 strings["en_newGame"]     = "NEW GAME"
@@ -614,6 +635,9 @@ Function HideMenuButtons()
 		DeleteButton(menuRulesId)
 		DeleteButton(menuEndId)
 		DeleteButton(menuLangId)
+@IF #HW_AMIGA
+		DeleteButton(menuFullId)
+@ENDIF
 		menuActive = False
 	EndIf
 EndFunction
@@ -655,6 +679,11 @@ Function ShowMenu()
 	If lang = "en" Then otherLng$ = "de"
 	MakeButton(menuLangId, #SIMPLEBUTTON, bx, 468, bw, bh, {OnMouseUp = OnLangToggle})
 	DrawMenuButton(bx, 468, bw, bh, strings[otherLng$ .. "_langLabel"] .. ": " .. strings[otherLng$ .. "_langName"], btnBlueBase, btnBlueLite)
+@IF #HW_AMIGA
+
+	MakeButton(menuFullId, #SIMPLEBUTTON, menuFullX, menuFullY, menuFullW, menuFullH, {OnMouseUp = OnFullToggle})
+	DrawMenuButton(menuFullX, menuFullY, menuFullW, menuFullH, FullLabel(), btnBlueBase, btnBlueLite)
+@ENDIF
 	menuActive = True
 EndFunction
 
@@ -713,6 +742,58 @@ EndFunction
 Function OnRulesBack(msg)
 	ShowMenu()
 EndFunction
+
+@IF #HW_AMIGA
+
+Function FullLabel()
+	If fullscreenOn Then Return(T("bWindow"))
+	Return(T("bFull"))
+EndFunction
+
+Function DrawGameFullButton()
+	SetFont(#SANS, 20)
+	Local label$ = FullLabel()
+	Local w = TextWidth(label$) + 16
+
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #BLACK, 1)
+	Box(gameFullX, gameFullY, gameFullClearW, gameFullH, #BLACK)
+	If gameFullActive Then DeleteButton(gameFullId)
+	MakeButton(gameFullId, #SIMPLEBUTTON, gameFullX, gameFullY, w, gameFullH, {OnMouseUp = OnFullToggle})
+	gameFullActive = True
+	DrawButtonBg(gameFullX, gameFullY, w, gameFullH, btnBlueBase, btnBlueLite)
+	BtnLabel(gameFullX, w, gameFullY + 3, label$)
+EndFunction
+
+Function ShowGameFullButton()
+	DrawGameFullButton()
+EndFunction
+
+Function HideGameFullButton()
+	If gameFullActive
+		DeleteButton(gameFullId)
+		gameFullActive = False
+	EndIf
+EndFunction
+
+Function ToggleFullscreen()
+	fullscreenOn = (fullscreenOn = False)
+	If fullscreenOn
+		ChangeDisplayMode(#DISPMODE_FULLSCREENSCALE, {KeepProportions = True})
+	Else
+		ChangeDisplayMode(#DISPMODE_WINDOWED)
+	EndIf
+	If phase = "menu"
+		DrawMenuButton(menuFullX, menuFullY, menuFullW, menuFullH, FullLabel(), btnBlueBase, btnBlueLite)
+	ElseIf gameFullActive
+		DrawGameFullButton()
+	EndIf
+EndFunction
+
+Function OnFullToggle(msg)
+	ToggleFullscreen()
+EndFunction
+@ENDIF
 
 Function InitPlayers()
 	rowStore = {}
@@ -1163,6 +1244,9 @@ Function StartGame()
 	Box(0, 0, panelX - 2, 555, #BLACK)
 	DrawBoard()
 	ShowStatus()
+@IF #HW_AMIGA
+	ShowGameFullButton()
+@ENDIF
 EndFunction
 
 Function OnPrimaryAction(msg)
@@ -1243,6 +1327,9 @@ Function LeaveToMenu()
 	HideEndTurnButton()
 	HidePrimaryButton()
 	HideColChoice()
+@IF #HW_AMIGA
+	HideGameFullButton()
+@ENDIF
 	choicePending = False
 	gewuerfelt    = False
 	If restartActive
