@@ -20,6 +20,10 @@ A clone of the classic push-your-luck dice game **Can't Stop**, written in
   (roll / bust / place / win) — native 8SVX audio on Amiga
 - Winner's columns blink on victory
 - Mouse-driven UI (buttons for rolling, placing, ending a turn)
+- **Fullscreen toggle (Amiga only):** a *Fullscreen / Window* button — in the
+  start menu and in-game (bottom-left) — switches the Amiga version between
+  windowed and scaled fullscreen via `ChangeDisplayMode`; the Windows build is
+  unaffected
 
 ## Files
 
@@ -40,7 +44,9 @@ A clone of the classic push-your-luck dice game **Can't Stop**, written in
   Workbench shows the die icon). Sound uses AHI; the icon's `NOLEGACYAUDIO`
   tooltype selects Hollywood's new AHI driver, which is required for
   AHI-over-emulation setups (e.g. AmiKit / WinUAE). From a Shell, launch with
-  `-nolegacyaudio` instead.
+  `-nolegacyaudio` instead. Use the *Fullscreen / Window* button (start menu
+  or bottom-left in-game) to switch to a scaled fullscreen display and back —
+  it needs an RTG screen, which the game already requires.
 - **From source:** open `cantstop.hws` with Hollywood. Keep `runner.png` and
   the sound files next to the script — the `.wav` files for a Windows/desktop
   build, the `.8svx` files for an Amiga build (the script picks the right set
