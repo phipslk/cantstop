@@ -12,3 +12,7 @@ cantstop.app/
 # Kommentierte Arbeitsfassung bleibt lokal; publiziert wird cantstop_release.hws (ohne ;-Kommentare)
 cantstop.hws
 strip_comments.py
+
+# Aminet-Packaging bleibt lokal, nicht auf GitHub
+*.lha
+*.readme
