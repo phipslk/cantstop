@@ -16,3 +16,8 @@ strip_comments.py
 # Aminet-Packaging bleibt lokal, nicht auf GitHub
 *.lha
 *.readme
+
+# Build-Artefakte & Quell-Assets nur als Release-Assets, nicht im Source-Repo
+*.exe
+cantstop68k
+*.mp3
