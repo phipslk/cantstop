@@ -9,8 +9,8 @@ main.hws
 cantstop KI/
 cantstop.app/
 
-# Kommentierte Arbeitsfassung bleibt lokal; publiziert wird cantstop_release.hws (ohne ;-Kommentare)
-cantstop.hws
+# Kommentierte Arbeitsfassung bleibt lokal; publiziert wird cantstop.hws (ohne ;-Kommentare)
+cantstop_dev.hws
 strip_comments.py
 
 # Aminet-Packaging bleibt lokal, nicht auf GitHub
