@@ -20,4 +20,5 @@ strip_comments.py
 # Build-Artefakte & Quell-Assets nur als Release-Assets, nicht im Source-Repo
 *.exe
 cantstop68k
+*.hwa
 *.mp3
