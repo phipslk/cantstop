@@ -4,7 +4,7 @@
 @APPVERSION "$VER: Can't Stop 1.0"
 @APPDESCRIPTION "A Can't Stop clone"
 
-@DISPLAY {Width = 810, Height = 555, Color = #BLACK, Mode = "Windowed"}
+@DISPLAY {Width = 810, Height = 555, Color = #BLACK, Mode = "Windowed", Title = "Can't Stop"}
 
 @IF #HW_AMIGA
 	@SAMPLE 101, "dice.8svx"
