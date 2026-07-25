@@ -102,6 +102,10 @@ primaryBtnY   = 490
 primaryBtnW   = 290
 primaryBtnH   = 36
 
+pairListY    = 120
+pairListStep = 36
+pairLineH    = 30
+
 btnGreenBase = $2E9E52
 btnGreenLite = $47C56E
 btnRedBase   = $B23A2E
@@ -120,9 +124,9 @@ gameFullId     = 46
 gameFullActive = False
 fullscreenOn   = False
 menuFullX      = 295
-menuFullY      = 512
+menuFullY      = 520
 menuFullW      = 220
-menuFullH      = 40
+menuFullH      = 30
 gameFullX      = 0
 gameFullY      = 524
 gameFullH      = 26
@@ -198,8 +202,6 @@ strings["de_bustLost"]    = "Fortschritt verloren!"
 strings["en_bustLost"]    = "Progress lost!"
 strings["de_chosen"]      = "Gewählt: "
 strings["en_chosen"]      = "Chosen: "
-strings["de_compChooses"] = "Computer wählt: "
-strings["en_compChooses"] = "Computer chooses: "
 strings["de_chosenCol"]   = "Gewählt: Spalte "
 strings["en_chosenCol"]   = "Chosen: column "
 strings["de_choicePrompt"] = "Nur 1 Runner frei - Spalte:"
@@ -589,6 +591,14 @@ Function ShowStatus()
 		ShowPrimaryButton(T("bRoll"))
 	EndIf
 	EndRefresh()
+@IF #HW_AMIGA
+
+	If isComputer[currentPl]
+		HideGameFullButton()
+	Else
+		ShowGameFullButton()
+	EndIf
+@ENDIF
 EndFunction
 
 Function AskPlayers()
@@ -681,8 +691,8 @@ Function ShowMenu()
 	DrawMenuButton(bx, 468, bw, bh, strings[otherLng$ .. "_langLabel"] .. ": " .. strings[otherLng$ .. "_langName"], btnBlueBase, btnBlueLite)
 @IF #HW_AMIGA
 
+	DrawMenuFullButton()
 	MakeButton(menuFullId, #SIMPLEBUTTON, menuFullX, menuFullY, menuFullW, menuFullH, {OnMouseUp = OnFullToggle})
-	DrawMenuButton(menuFullX, menuFullY, menuFullW, menuFullH, FullLabel(), btnBlueBase, btnBlueLite)
 @ENDIF
 	menuActive = True
 EndFunction
@@ -750,6 +760,14 @@ Function FullLabel()
 	Return(T("bFull"))
 EndFunction
 
+Function DrawMenuFullButton()
+	SetFont(#SANS, 22)
+	Local label$ = FullLabel()
+	menuFullH = TextHeight(label$) + 4
+	DrawButtonBg(menuFullX, menuFullY, menuFullW, menuFullH, btnBlueBase, btnBlueLite)
+	TextOut(#CENTER, menuFullY + 2, label$, {Align = #CENTER, Color = #WHITE})
+EndFunction
+
 Function DrawGameFullButton()
 	SetFont(#SANS, 20)
 	Local label$ = FullLabel()
@@ -773,6 +791,10 @@ Function HideGameFullButton()
 	If gameFullActive
 		DeleteButton(gameFullId)
 		gameFullActive = False
+
+		SetFillStyle(#FILLCOLOR)
+		SetFormStyle(#BORDER, #BLACK, 1)
+		Box(gameFullX, gameFullY, gameFullClearW, gameFullH, #BLACK)
 	EndIf
 EndFunction
 
@@ -784,7 +806,7 @@ Function ToggleFullscreen()
 		ChangeDisplayMode(#DISPMODE_WINDOWED)
 	EndIf
 	If phase = "menu"
-		DrawMenuButton(menuFullX, menuFullY, menuFullW, menuFullH, FullLabel(), btnBlueBase, btnBlueLite)
+		DrawMenuFullButton()
 	ElseIf gameFullActive
 		DrawGameFullButton()
 	EndIf
@@ -1120,12 +1142,13 @@ Function DoThrowDice()
 		DrawBoard()
 		gewuerfelt = False
 		phase = "bust"
-		ShowPrimaryButton(T("bNext"))
+
+		If aiThinking = False Then ShowPrimaryButton(T("bNext"))
 		Return
 	EndIf
 
 	BeginRefresh()
-	Local textY = 120
+	Local textY = pairListY
 	buttonCount = 0
 	For Local pairIdx = 0 To wurfAnzahl - 1
 		Local choosable = PairPlayable(wurf[pairIdx].sum1, wurf[pairIdx].sum2)
@@ -1133,22 +1156,26 @@ Function DoThrowDice()
 		If choosable = False Then textColor = #GRAY
 		SetFont(#SANS, 22)
 		TextOut(panelX, textY, T("pair") .. wurf[pairIdx].sum1 .. " + " .. wurf[pairIdx].sum2, {Color = textColor})
-		If choosable
+
+		If choosable And aiThinking = False
 
 			Local btnId = pairIdx + 1
-			DrawButtonBg(panelX + 160, textY, 104, 30, btnBlueBase, btnBlueLite)
+			DrawButtonBg(panelX + 160, textY, 104, pairLineH, btnBlueBase, btnBlueLite)
 			SetFont(#SANS, 22)
 			TextOut(panelX + 170, textY + 4, T("select"), {Color = #WHITE})
-			MakeButton(btnId, #SIMPLEBUTTON, panelX + 160, textY, 104, 30, {OnMouseUp = OnPairSelect})
+			MakeButton(btnId, #SIMPLEBUTTON, panelX + 160, textY, 104, pairLineH, {OnMouseUp = OnPairSelect})
 			buttonIds[buttonCount] = btnId
 			buttonCount = buttonCount + 1
 		EndIf
-		textY = textY + 36
+		textY = textY + pairListStep
 	Next
 
 	SetFont(#SANS, 22)
-	TextOut(panelX, textY + 16, T("hint1"), {Color = #GRAY})
-	TextOut(panelX, textY + 44, T("hint2"), {Color = #GRAY})
+
+	If aiThinking = False
+		TextOut(panelX, textY + 16, T("hint1"), {Color = #GRAY})
+		TextOut(panelX, textY + 44, T("hint2"), {Color = #GRAY})
+	EndIf
 	ShowScore(textY + 78)
 
 	HidePrimaryButton()
@@ -1244,9 +1271,6 @@ Function StartGame()
 	Box(0, 0, panelX - 2, 555, #BLACK)
 	DrawBoard()
 	ShowStatus()
-@IF #HW_AMIGA
-	ShowGameFullButton()
-@ENDIF
 EndFunction
 
 Function OnPrimaryAction(msg)
@@ -1392,6 +1416,34 @@ Function AiShouldStop()
 	Return(False)
 EndFunction
 
+Function DrawPairLine(pairIdx, farbe)
+	Local lineY = pairListY + pairIdx * pairListStep
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #BLACK, 1)
+	Box(panelX, lineY, 810 - panelX, pairLineH, #BLACK)
+	SetFont(#SANS, 22)
+	TextOut(panelX, lineY, T("pair") .. wurf[pairIdx].sum1 .. " + " .. wurf[pairIdx].sum2, {Color = farbe})
+EndFunction
+
+Function PairColor(pairIdx)
+	If PairPlayable(wurf[pairIdx].sum1, wurf[pairIdx].sum2) Then Return(#WHITE)
+	Return(#GRAY)
+EndFunction
+
+Function AiThinkAnimation(pidx)
+	For Local runde = 1 To 2
+		For Local i = 0 To wurfAnzahl - 1
+			If PairPlayable(wurf[i].sum1, wurf[i].sum2)
+				DrawPairLine(i, #YELLOW)
+				Wait(10)
+				DrawPairLine(i, PairColor(i))
+			EndIf
+		Next
+	Next
+	DrawPairLine(pidx, #YELLOW)
+	Wait(20)
+EndFunction
+
 Function AiApplyPair(pidx)
 	RestoreTempMarker()
 	selectedIdx = pidx
@@ -1404,11 +1456,8 @@ Function AiApplyPair(pidx)
 		AnimatedApplyPair(s1, s2)
 	EndIf
 	DrawBoard()
-	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 84, 810 - panelX, 30, #BLACK)
-	SetFont(#SANS, 22)
 
-	TextOut(panelX, 87, T("compChooses") .. s1 .. " + " .. s2, {Color = #YELLOW})
+	DrawPairLine(pidx, #YELLOW)
 EndFunction
 
 Function PlayComputerTurn()
@@ -1422,7 +1471,9 @@ Function PlayComputerTurn()
 			NextPlayer()
 			Return
 		EndIf
-		AiApplyPair(AiPickPairIdx())
+		Local pidx = AiPickPairIdx()
+		AiThinkAnimation(pidx)
+		AiApplyPair(pidx)
 		Wait(45)
 		If AiShouldStop()
 			aiThinking = False
