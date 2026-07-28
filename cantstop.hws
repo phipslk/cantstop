@@ -1,7 +1,7 @@
 ﻿@APPTITLE "Can't Stop"
 @APPAUTHOR "Philipp Lonke"
 @APPCOPYRIGHT "(C) Copyright 2026 by Philipp Lonke, licensed under GPL-3.0"
-@APPVERSION "$VER: Can't Stop 1.0"
+@APPVERSION "$VER: Can't Stop 1.1"
 @APPDESCRIPTION "A Can't Stop clone"
 
 @DISPLAY {Width = 810, Height = 555, Color = #BLACK, Mode = "Windowed", Title = "Can't Stop"}
@@ -30,6 +30,7 @@ rowHeight = 37
 startX    = 30
 startY    = 520
 panelX    = 510
+panelW    = 810 - panelX
 
 spielerFarben = {}
 spielerFarben[1] = #MAROON
@@ -49,6 +50,8 @@ For aiInit = 1 To 4
 	isComputer[aiInit] = False
 Next
 aiThinking     = False
+
+aiStrength     = 2
 
 rowStore       = {}
 gameReady      = False
@@ -167,6 +170,10 @@ strings["de_qComputers"]  = "Computer-Gegner (0-"
 strings["en_qComputers"]  = "Computer opponents (0-"
 strings["de_maxInfo"]     = "Maximal 4 Spieler gesamt (Menschen + Computer)."
 strings["en_maxInfo"]     = "Maximum of 4 players in total (humans + computers)."
+strings["de_qStrength"]   = "Spielstärke der Computer (1-3)?"
+strings["en_qStrength"]   = "Computer strength (1-3)?"
+strings["de_strengthInfo"] = "1 = leicht, 2 = normal, 3 = stark"
+strings["en_strengthInfo"] = "1 = easy, 2 = normal, 3 = strong"
 
 strings["de_player"]      = "Spieler "
 strings["en_player"]      = "Player "
@@ -362,7 +369,7 @@ Function ShowColChoice(c1, c2)
 	EndIf
 	choicePending = True
 	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 338, 810 - panelX, 98, #BLACK)
+	Box(panelX, 338, panelW, 98, #BLACK)
 	SetFont(#SANS, 22)
 	TextOut(panelX, 342, T("choicePrompt"), {Color = #YELLOW})
 	DrawButtonBg(panelX,       380, 100, 32, btnBlueBase, btnBlueLite)
@@ -379,7 +386,7 @@ Function HideColChoice()
 		DeleteButton(choiceBtnId2)
 		choiceActive = False
 		SetFillStyle(#FILLCOLOR)
-		Box(panelX, 338, 810 - panelX, 98, #BLACK)
+		Box(panelX, 338, panelW, 98, #BLACK)
 	EndIf
 EndFunction
 
@@ -543,7 +550,7 @@ EndFunction
 Function ClearPanel()
 	SetFillStyle(#FILLCOLOR)
 	SetFormStyle(#BORDER, #BLACK, 1)
-	Box(panelX, 0, 810 - panelX, 555, #BLACK)
+	Box(panelX, 0, panelW, 555, #BLACK)
 EndFunction
 
 Function ShowScore(startzeile)
@@ -629,6 +636,18 @@ Function AskPlayers()
 	If nc > maxC Then nc = maxC
 	Box(340, 359, 130, 32, #BLACK)
 	TextOut(#CENTER, 363, ToString(nc), {Align = #CENTER, Color = #YELLOW})
+
+	If nc > 0
+		TextOut(#CENTER, 425, T("qStrength"), {Align = #CENTER, Color = #WHITE})
+		TextOut(#CENTER, 455, T("strengthInfo"), {Align = #CENTER, Color = #GRAY})
+		Locate(398, 493)
+		Local ns = ToNumber(InKeyStr(#NUMERICAL, 1, False, True))
+		If ns < 1 Then ns = 1
+		If ns > 3 Then ns = 3
+		Box(340, 489, 130, 32, #BLACK)
+		TextOut(#CENTER, 493, ToString(ns), {Align = #CENTER, Color = #YELLOW})
+		aiStrength = ns
+	EndIf
 	Wait(20)
 
 	nr_human  = nh
@@ -880,18 +899,6 @@ Function PairNeedsChoice(summe1, summe2)
 	If tempMarker[summe2] > 0     Then Return(False)
 	If (3 - CountTempCols()) >= 2 Then Return(False)
 	Return(True)
-EndFunction
-
-Function MoveCol(spalte)
-	If colOwner[spalte] > 0 Then Return
-	If tempMarker[spalte] = 0
-		tempMarker[spalte] = rowStore[RowKey(currentPl, spalte)] + 1
-	Else
-		tempMarker[spalte] = tempMarker[spalte] + 1
-	EndIf
-	If tempMarker[spalte] > ColHeight(spalte)
-		tempMarker[spalte] = ColHeight(spalte)
-	EndIf
 EndFunction
 
 Function CommitTempMarker()
@@ -1215,7 +1222,7 @@ Function OnPairSelect(msg)
 	If PairNeedsChoice(s1, s2)
 		DrawBoard()
 		SetFillStyle(#FILLCOLOR)
-		Box(panelX, 84, 810 - panelX, 30, #BLACK)
+		Box(panelX, 84, panelW, 30, #BLACK)
 		SetFont(#SANS, 22)
 		TextOut(panelX, 87, T("choicePair1") .. s1 .. " + " .. s2 .. T("choicePair2"), {Color = #GREEN})
 		ShowColChoice(s1, s2)
@@ -1227,7 +1234,7 @@ Function OnPairSelect(msg)
 	DrawBoard()
 
 	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 84, 810 - panelX, 30, #BLACK)
+	Box(panelX, 84, panelW, 30, #BLACK)
 	SetFont(#SANS, 22)
 	TextOut(panelX, 87, T("chosen") .. s1 .. " + " .. s2, {Color = #YELLOW})
 	ShowBustRisk()
@@ -1247,7 +1254,7 @@ Function OnColChoice(msg)
 	DrawBoard()
 
 	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 84, 810 - panelX, 30, #BLACK)
+	Box(panelX, 84, panelW, 30, #BLACK)
 	SetFont(#SANS, 22)
 	TextOut(panelX, 87, T("chosenCol") .. ToString(spalte), {Color = #YELLOW})
 	ShowBustRisk()
@@ -1367,10 +1374,52 @@ Function OnRestartGame(msg)
 	LeaveToMenu()
 EndFunction
 
+Function ColsOwnedBy(plr)
+	Local n = 0
+	For Local col = 2 To 12
+		If colOwner[col] = plr Then n = n + 1
+	Next
+	Return(n)
+EndFunction
+
+Function MaxOpponentCols()
+	Local best = 0
+	For Local plr = 1 To nr_player
+		If plr <> currentPl
+			Local n = ColsOwnedBy(plr)
+			If n > best Then best = n
+		EndIf
+	Next
+	Return(best)
+EndFunction
+
+Function MaxOpponentPos(col)
+	Local best = 0
+	For Local plr = 1 To nr_player
+		If plr <> currentPl
+			Local p = rowStore[RowKey(plr, col)]
+			If p > best Then best = p
+		EndIf
+	Next
+	Return(best)
+EndFunction
+
 Function AiColValue(col)
 	If ColPlayable(col) = False Then Return(0)
 	Local v = 7 - Abs(col - 7)
-	If tempMarker[col] > 0 Then v = v + 4
+
+	If tempMarker[col] > 0 And aiStrength >= 2 Then v = v + 4
+	If aiStrength >= 3
+
+		Local pos = tempMarker[col]
+		If pos = 0 Then pos = rowStore[RowKey(currentPl, col)]
+		v = v + 6 * pos / ColHeight(col)
+		v = v + (maxHeight - ColHeight(col)) / 4
+
+		v = v + 4 * MaxOpponentPos(col) / ColHeight(col)
+
+		If ColsOwnedBy(currentPl) >= 2 Then v = v + 4 * pos / ColHeight(col)
+	EndIf
 	Return(v)
 EndFunction
 
@@ -1406,8 +1455,17 @@ Function AiShouldStop()
 		EndIf
 	Next
 
+	Local zugewinn = 2
+	If aiStrength = 1 Then zugewinn = 1
+	If aiStrength >= 3
+
+		If MaxOpponentCols() >= 2 Then zugewinn = zugewinn * 2
+
+		If ColsOwnedBy(currentPl) >= 2 Then zugewinn = zugewinn * 1.5
+	EndIf
+
 	Local pct = BustPercent()
-	If pct * progress >= (100 - pct) * 2 Then Return(True)
+	If pct * progress >= (100 - pct) * zugewinn Then Return(True)
 	Return(False)
 EndFunction
 
@@ -1415,7 +1473,7 @@ Function DrawPairLine(pairIdx, farbe)
 	Local lineY = pairListY + pairIdx * pairListStep
 	SetFillStyle(#FILLCOLOR)
 	SetFormStyle(#BORDER, #BLACK, 1)
-	Box(panelX, lineY, 810 - panelX, pairLineH, #BLACK)
+	Box(panelX, lineY, panelW, pairLineH, #BLACK)
 	SetFont(#SANS, 22)
 	TextOut(panelX, lineY, T("pair") .. wurf[pairIdx].sum1 .. " + " .. wurf[pairIdx].sum2, {Color = farbe})
 EndFunction
