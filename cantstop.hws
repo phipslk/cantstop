@@ -1294,10 +1294,6 @@ Function OnPrimaryAction(msg)
 	EndIf
 EndFunction
 
-Function OnRightMouse(msg)
-	OnPrimaryAction(msg)
-EndFunction
-
 Function OnGlobalKey(msg)
 	If msg.key <> "ESC" Then Return
 	If aiThinking Or asking Then Return
@@ -1395,8 +1391,7 @@ Function AiPickPairIdx()
 EndFunction
 
 Function AiPickColumn(c1, c2)
-	If AiColValue(c1) >= AiColValue(c2) Then Return(c1)
-	Return(c2)
+	If AiColValue(c1) >= AiColValue(c2) Then Return(c1) Else Return(c2)
 EndFunction
 
 Function AiShouldStop()
@@ -1489,7 +1484,7 @@ InitRunnerSprites()
 ShowMenu()
 
 InstallEventHandler({
-	OnRightMouseUp = OnRightMouse,
+	OnRightMouseUp = OnPrimaryAction,
 	OnKeyDown      = OnGlobalKey
 })
 
