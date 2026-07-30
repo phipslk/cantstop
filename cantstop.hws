@@ -1409,6 +1409,13 @@ Function AiColValue(col)
 	Local v = 7 - Abs(col - 7)
 
 	If tempMarker[col] > 0 And aiStrength >= 2 Then v = v + 4
+
+	If aiStrength >= 2
+		Local posNear = tempMarker[col]
+		If posNear = 0 Then posNear = rowStore[RowKey(currentPl, col)]
+		If posNear + 1 >= ColHeight(col) Then v = v + 12
+	EndIf
+
 	If aiStrength >= 3
 
 		Local pos = tempMarker[col]
