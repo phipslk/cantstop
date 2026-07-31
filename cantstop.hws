@@ -1,7 +1,7 @@
 ﻿@APPTITLE "Can't Stop"
 @APPAUTHOR "Philipp Lonke"
 @APPCOPYRIGHT "(C) Copyright 2026 by Philipp Lonke, licensed under GPL-3.0"
-@APPVERSION "$VER: Can't Stop 1.1"
+@APPVERSION "$VER: Can't Stop 1.1.1"
 @APPDESCRIPTION "A Can't Stop clone"
 
 @DISPLAY {Width = 810, Height = 555, Color = #BLACK, Mode = "Windowed", Title = "Can't Stop"}
