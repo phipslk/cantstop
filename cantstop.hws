@@ -4,6 +4,8 @@
 @APPVERSION "$VER: Can't Stop 1.1.1"
 @APPDESCRIPTION "A Can't Stop clone"
 
+gameVersion$ = "1.1.1"
+
 @DISPLAY {Width = 810, Height = 555, Color = #BLACK, Mode = "Windowed", Title = "Can't Stop"}
 
 @IF #HW_AMIGA
@@ -747,6 +749,9 @@ Function ShowRules()
 	MakeButton(menuBackId, #SIMPLEBUTTON, 305, 495, 200, 40, {OnMouseUp = OnRulesBack})
 	DrawMenuButton(305, 495, 200, 40, T("bBack"), btnBlueBase, btnBlueLite)
 	backActive = True
+
+	SetFont(#SANS, 14)
+	TextOut(15, 530, "v" .. gameVersion$, {Color = #GRAY})
 EndFunction
 
 Function OnMenuStart(msg)
