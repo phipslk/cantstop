@@ -1,10 +1,10 @@
 ﻿@APPTITLE "Can't Stop"
 @APPAUTHOR "Philipp Lonke"
 @APPCOPYRIGHT "(C) Copyright 2026 by Philipp Lonke, licensed under GPL-3.0"
-@APPVERSION "$VER: Can't Stop 1.1.1"
+@APPVERSION "$VER: Can't Stop 2.0"
 @APPDESCRIPTION "A Can't Stop clone"
 
-gameVersion$ = "1.1.1"
+gameVersion$ = "2.0"
 
 @DISPLAY {Width = 810, Height = 555, Color = #BLACK, Mode = "Windowed", Title = "Can't Stop"}
 
@@ -24,6 +24,9 @@ gameVersion$ = "1.1.1"
 
 @BRUSH 2, "title.png", {Link = True}
 
+@BRUSH 3, "panel_bg.png", {Link = True}
+@BRUSH 4, "board_bg.png", {Link = True}
+
 columns   = {3, 5, 7, 9, 11, 13, 11, 9, 7, 5, 3}
 maxHeight = 13
 colWidth  = 40
@@ -31,8 +34,11 @@ colWidth  = 40
 rowHeight = 37
 startX    = 30
 startY    = 520
-panelX    = 510
-panelW    = 810 - panelX
+
+panelBgX     = 510
+panelMargin  = 22
+panelX       = panelBgX + panelMargin
+panelW       = (810 - panelMargin) - panelX
 
 spielerFarben = {}
 spielerFarben[1] = #AQUA
@@ -88,7 +94,7 @@ restartBtnId  = 97
 restartActive = False
 endBtnX       = panelX
 endBtnY       = 450
-endBtnW       = 290
+endBtnW       = panelW
 endBtnH       = 36
 endTurnActive = False
 quitActive    = False
@@ -104,12 +110,13 @@ primaryBtnId  = 30
 primaryActive = False
 primaryBtnX   = panelX
 primaryBtnY   = 490
-primaryBtnW   = 290
+primaryBtnW   = panelW
 primaryBtnH   = 36
 
-pairListY    = 120
-pairListStep = 36
-pairLineH    = 30
+pairListY    = 204
+pairListStep = 26
+
+pairLineH    = 24
 
 btnGreenBase = $2E9E52
 btnGreenLite = $47C56E
@@ -203,8 +210,6 @@ strings["de_select"]      = "WÄHLEN"
 strings["en_select"]      = "SELECT"
 strings["de_hint1"]       = "Erst ein Paar wählen"
 strings["en_hint1"]       = "First choose a pair"
-strings["de_hint2"]       = "(Knopf WÄHLEN)."
-strings["en_hint2"]       = "(SELECT button)."
 strings["de_bustNoMove"]  = "Keine Figur setzbar."
 strings["en_bustNoMove"]  = "No move possible."
 strings["de_bustLost"]    = "Fortschritt verloren!"
@@ -314,6 +319,11 @@ Function DrawButtonBg(bx, by, bw, bh, basis, glanz)
 	Box(bx, by, bw, bh, basis)
 	SetFormStyle(#BORDER, glanz, 1)
 	Box(bx + 2, by + 2, bw - 4, bh / 2 - 1, glanz)
+
+	SetFillStyle(#FILLNONE)
+	SetFormStyle(#BORDER, $C8A03C, 1)
+	Box(bx, by, bw, bh, $C8A03C)
+	SetFillStyle(#FILLCOLOR)
 	SetFormStyle(#BORDER, #BLACK, 1)
 EndFunction
 
@@ -370,8 +380,7 @@ Function ShowColChoice(c1, c2)
 		choiceActive = True
 	EndIf
 	choicePending = True
-	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 338, panelW, 98, #BLACK)
+	ClearPanelPatch(panelX, 338, panelW, 98)
 	SetFont(#SANS, 22)
 	TextOut(panelX, 342, T("choicePrompt"), {Color = #YELLOW})
 	DrawButtonBg(panelX,       380, 100, 32, btnBlueBase, btnBlueLite)
@@ -387,8 +396,7 @@ Function HideColChoice()
 		DeleteButton(choiceBtnId1)
 		DeleteButton(choiceBtnId2)
 		choiceActive = False
-		SetFillStyle(#FILLCOLOR)
-		Box(panelX, 338, panelW, 98, #BLACK)
+		ClearPanelPatch(panelX, 338, panelW, 98)
 	EndIf
 EndFunction
 
@@ -407,8 +415,7 @@ Function HidePrimaryButton()
 		DeleteButton(primaryBtnId)
 		primaryActive = False
 	EndIf
-	SetFillStyle(#FILLCOLOR)
-	Box(primaryBtnX, primaryBtnY, primaryBtnW, primaryBtnH, #BLACK)
+	ClearPanelPatch(primaryBtnX, primaryBtnY, primaryBtnW, primaryBtnH)
 EndFunction
 
 Function DrawFieldCell(spalte, stepPos)
@@ -550,15 +557,28 @@ Function ClearRunners()
 EndFunction
 
 Function ClearPanel()
-	SetFillStyle(#FILLCOLOR)
-	SetFormStyle(#BORDER, #BLACK, 1)
-	Box(panelX, 0, panelW, 555, #BLACK)
+	DisplayBrush(3, panelBgX, 0)
+EndFunction
+
+Function ClearPanelPatch(x, y, w, h)
+	CreateClipRegion(90, #BOX, x, y, w, h)
+	SetClipRegion(90)
+	DisplayBrush(3, panelBgX, 0)
+	SetClipRegion(#NONE)
+EndFunction
+
+Function ClearBoardPatch(x, y, w, h)
+	CreateClipRegion(91, #BOX, x, y, w, h)
+	SetClipRegion(91)
+	DisplayBrush(4, 0, 0)
+	SetClipRegion(#NONE)
 EndFunction
 
 Function ShowScore(startzeile)
-	SetFont(#SANS, 22)
+
+	SetFont(#SANS, 20)
 	TextOut(panelX, startzeile, T("columnsWon"), {Color = #GRAY})
-	Local textY = startzeile + 30
+	Local textY = startzeile + 18
 	For Local plr = 1 To nr_player
 		Local wonCount = 0
 		For Local spalte = 2 To 12
@@ -568,7 +588,7 @@ Function ShowScore(startzeile)
 		If isComputer[plr] Then wer$ = T("computer")
 		TextOut(panelX, textY, wer$ .. ToString(plr) .. ":", {Color = spielerFarben[plr]})
 		TextOut(panelX + 170, textY, ToString(wonCount) .. " / 3", {Color = spielerFarben[plr]})
-		textY = textY + 28
+		textY = textY + 22
 	Next
 EndFunction
 
@@ -576,10 +596,10 @@ Function ShowPlayerHeader()
 	SetFont(#SANS, 22)
 	Local wer$ = T("player")
 	If isComputer[currentPl] Then wer$ = T("computer")
-	TextOut(panelX, 10, wer$ .. ToString(currentPl), {Color = spielerFarben[currentPl]})
+	TextOut(panelX, 22, wer$ .. ToString(currentPl), {Color = spielerFarben[currentPl]})
 	SetFillStyle(#FILLCOLOR)
 	SetFormStyle(#BORDER, #WHITE, 1)
-	Box(panelX + 172, 11, 22, 22, spielerFarben[currentPl])
+	Box(panelX + 172, 23, 22, 22, spielerFarben[currentPl])
 
 	SetFormStyle(#BORDER, #BLACK, 1)
 EndFunction
@@ -589,7 +609,7 @@ Function ShowStatus()
 	BeginRefresh()
 	ClearPanel()
 	ShowPlayerHeader()
-	ShowScore(110)
+	ShowScore(175)
 
 	HideEndTurnButton()
 	If isComputer[currentPl]
@@ -797,9 +817,7 @@ Function DrawGameFullButton()
 	Local label$ = FullLabel()
 	Local w = TextWidth(label$) + 16
 
-	SetFillStyle(#FILLCOLOR)
-	SetFormStyle(#BORDER, #BLACK, 1)
-	Box(gameFullX, gameFullY, gameFullClearW, gameFullH, #BLACK)
+	ClearBoardPatch(gameFullX, gameFullY, gameFullClearW, gameFullH)
 	If gameFullActive Then DeleteButton(gameFullId)
 	MakeButton(gameFullId, #SIMPLEBUTTON, gameFullX, gameFullY, w, gameFullH, {OnMouseUp = OnFullToggle})
 	gameFullActive = True
@@ -816,9 +834,7 @@ Function HideGameFullButton()
 		DeleteButton(gameFullId)
 		gameFullActive = False
 
-		SetFillStyle(#FILLCOLOR)
-		SetFormStyle(#BORDER, #BLACK, 1)
-		Box(gameFullX, gameFullY, gameFullClearW, gameFullH, #BLACK)
+		ClearBoardPatch(gameFullX, gameFullY, gameFullClearW, gameFullH)
 	EndIf
 EndFunction
 
@@ -1013,8 +1029,9 @@ Function ShowBustRisk()
 	Local col = #GREEN
 	If pct >= 25 Then col = $FF8C00
 	If pct >= 50 Then col = $FF2E9E
-	Local bx = panelX + 184
-	Local by = 42
+
+	Local bx = panelX
+	Local by = 112
 	SetFillStyle(#FILLCOLOR)
 	SetFormStyle(#BORDER, col, 2)
 	Box(bx, by, 92, 46, #BLACK)
@@ -1078,7 +1095,7 @@ EndFunction
 
 Function DrawFourDice(w1, w2, w3, w4)
 	Local s   = 40
-	Local dy  = 42
+	Local dy  = 66
 	Local gap = 46
 	DrawDie(panelX,           dy, s, w1)
 	DrawDie(panelX + gap,     dy, s, w2)
@@ -1172,10 +1189,12 @@ Function DoThrowDice()
 		If choosable And aiThinking = False
 
 			Local btnId = pairIdx + 1
-			DrawButtonBg(panelX + 160, textY, 104, pairLineH, btnBlueBase, btnBlueLite)
+			Local selBtnW = 104
+			Local selBtnX = panelX + panelW - selBtnW
+			DrawButtonBg(selBtnX, textY, selBtnW, pairLineH, btnBlueBase, btnBlueLite)
 			SetFont(#SANS, 22)
-			TextOut(panelX + 170, textY + 4, T("select"), {Color = #WHITE})
-			MakeButton(btnId, #SIMPLEBUTTON, panelX + 160, textY, 104, pairLineH, {OnMouseUp = OnPairSelect})
+			BtnLabel(selBtnX, selBtnW, textY + 4, T("select"))
+			MakeButton(btnId, #SIMPLEBUTTON, selBtnX, textY, selBtnW, pairLineH, {OnMouseUp = OnPairSelect})
 			buttonIds[buttonCount] = btnId
 			buttonCount = buttonCount + 1
 		EndIf
@@ -1186,9 +1205,11 @@ Function DoThrowDice()
 
 	If aiThinking = False
 		TextOut(panelX, textY + 16, T("hint1"), {Color = #GRAY})
-		TextOut(panelX, textY + 44, T("hint2"), {Color = #GRAY})
 	EndIf
-	ShowScore(textY + 78)
+
+	Local scoreY = 450 - 24 - nr_player * 22
+	If scoreY > textY + 60 Then scoreY = textY + 60
+	ShowScore(scoreY)
 
 	HidePrimaryButton()
 	HideEndTurnButton()
@@ -1226,10 +1247,9 @@ Function OnPairSelect(msg)
 
 	If PairNeedsChoice(s1, s2)
 		DrawBoard()
-		SetFillStyle(#FILLCOLOR)
-		Box(panelX, 84, panelW, 30, #BLACK)
+		ClearPanelPatch(panelX, 167, panelW, 30)
 		SetFont(#SANS, 22)
-		TextOut(panelX, 87, T("choicePair1") .. s1 .. " + " .. s2 .. T("choicePair2"), {Color = #GREEN})
+		TextOut(panelX, 170, T("choicePair1") .. s1 .. " + " .. s2 .. T("choicePair2"), {Color = #GREEN})
 		ShowColChoice(s1, s2)
 		Return
 	EndIf
@@ -1238,10 +1258,9 @@ Function OnPairSelect(msg)
 	AnimatedApplyPair(s1, s2)
 	DrawBoard()
 
-	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 84, panelW, 30, #BLACK)
+	ClearPanelPatch(panelX, 167, panelW, 30)
 	SetFont(#SANS, 22)
-	TextOut(panelX, 87, T("chosen") .. s1 .. " + " .. s2, {Color = #YELLOW})
+	TextOut(panelX, 170, T("chosen") .. s1 .. " + " .. s2, {Color = #YELLOW})
 	ShowBustRisk()
 	ShowPrimaryButton(T("bRollAgain"))
 	ShowEndTurnButton()
@@ -1258,10 +1277,9 @@ Function OnColChoice(msg)
 	AnimatedMove(spalte)
 	DrawBoard()
 
-	SetFillStyle(#FILLCOLOR)
-	Box(panelX, 84, panelW, 30, #BLACK)
+	ClearPanelPatch(panelX, 167, panelW, 30)
 	SetFont(#SANS, 22)
-	TextOut(panelX, 87, T("chosenCol") .. ToString(spalte), {Color = #YELLOW})
+	TextOut(panelX, 170, T("chosenCol") .. ToString(spalte), {Color = #YELLOW})
 	ShowBustRisk()
 	ShowPrimaryButton(T("bRollAgain"))
 	ShowEndTurnButton()
@@ -1278,9 +1296,7 @@ Function StartGame()
 	InitPlayers()
 	phase = "spielen"
 
-	SetFillStyle(#FILLCOLOR)
-	SetFormStyle(#BORDER, #BLACK, 1)
-	Box(0, 0, panelX - 2, 555, #BLACK)
+	DisplayBrush(4, 0, 0)
 	DrawBoard()
 	ShowStatus()
 EndFunction
@@ -1481,9 +1497,7 @@ EndFunction
 
 Function DrawPairLine(pairIdx, farbe)
 	Local lineY = pairListY + pairIdx * pairListStep
-	SetFillStyle(#FILLCOLOR)
-	SetFormStyle(#BORDER, #BLACK, 1)
-	Box(panelX, lineY, panelW, pairLineH, #BLACK)
+	ClearPanelPatch(panelX, lineY, panelW, pairLineH)
 	SetFont(#SANS, 22)
 	TextOut(panelX, lineY, T("pair") .. wurf[pairIdx].sum1 .. " + " .. wurf[pairIdx].sum2, {Color = farbe})
 EndFunction
