@@ -33,7 +33,7 @@ panelX    = 510
 panelW    = 810 - panelX
 
 spielerFarben = {}
-spielerFarben[1] = #MAROON
+spielerFarben[1] = #AQUA
 spielerFarben[2] = #BLUE
 spielerFarben[3] = #GREEN
 spielerFarben[4] = #FUCHSIA
