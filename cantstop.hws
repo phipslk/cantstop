@@ -42,8 +42,10 @@ panelW       = (810 - panelMargin) - panelX
 
 spielerFarben = {}
 spielerFarben[1] = #AQUA
-spielerFarben[2] = #BLUE
-spielerFarben[3] = #GREEN
+spielerFarben[2] = $7FA9FF
+
+spielerFarben[3] = $FF8C00
+
 spielerFarben[4] = #FUCHSIA
 
 colOwner = {}
