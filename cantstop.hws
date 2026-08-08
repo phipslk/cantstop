@@ -819,7 +819,7 @@ Function DrawGameFullButton()
 	Local label$ = FullLabel()
 	Local w = TextWidth(label$) + 16
 
-	ClearBoardPatch(gameFullX, gameFullY, gameFullClearW, gameFullH)
+	ClearBoardPatch(gameFullX, gameFullY - 3, gameFullClearW, gameFullH + 3)
 	If gameFullActive Then DeleteButton(gameFullId)
 	MakeButton(gameFullId, #SIMPLEBUTTON, gameFullX, gameFullY, w, gameFullH, {OnMouseUp = OnFullToggle})
 	gameFullActive = True
@@ -836,7 +836,7 @@ Function HideGameFullButton()
 		DeleteButton(gameFullId)
 		gameFullActive = False
 
-		ClearBoardPatch(gameFullX, gameFullY, gameFullClearW, gameFullH)
+	ClearBoardPatch(gameFullX, gameFullY - 3, gameFullClearW, gameFullH + 3)
 	EndIf
 EndFunction
 
