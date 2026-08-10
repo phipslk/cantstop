@@ -1,10 +1,10 @@
 ﻿@APPTITLE "Can't Stop"
 @APPAUTHOR "Philipp Lonke"
 @APPCOPYRIGHT "(C) Copyright 2026 by Philipp Lonke, licensed under GPL-3.0"
-@APPVERSION "$VER: Can't Stop 2.0"
+@APPVERSION "$VER: Can't Stop 2.1"
 @APPDESCRIPTION "A Can't Stop clone"
 
-gameVersion$ = "2.0"
+gameVersion$ = "2.1"
 
 @DISPLAY {Width = 810, Height = 555, Color = #BLACK, Mode = "Windowed", Title = "Can't Stop"}
 
@@ -240,12 +240,13 @@ strings["de_rules"] = {
 	"- Eine neue Spalte kostet einen Runner.",
 	"- Zwei Läufer möglich? Dann musst du beide bewegen -",
 	"gezielt nur einen zu bewegen ist aber erlaubt.",
+	"- Zwei Läufer aktiv? Dann MUSS, wenn eine Paarung es",
+	"erlaubt, der dritte Läufer eröffnet werden.",
 	"- Nach dem Setzen: weiter würfeln oder Zug beenden.",
 	"- Keine Figur setzbar = BUST: Zugfortschritt ist weg!",
 	"- Runner ganz oben + Zug beenden = Spalte gehört dir,",
 	"sie ist dann für alle gesperrt.",
-	"- Wer zuerst 3 Spalten besitzt, gewinnt.",
-	"Tipp: Rechtsklick = Hauptknopf, ESC = zurück ins Menü."
+	"- Wer zuerst 3 Spalten besitzt, gewinnt."
 }
 strings["en_rules"] = {
 	"Goal: Be the first to claim 3 columns.",
@@ -256,12 +257,13 @@ strings["en_rules"] = {
 	"- Opening a new column uses one runner.",
 	"- Can move two runners? Then you must move both -",
 	"but picking just one to move is allowed.",
+	"- Two runners active? If a roll allows it, the",
+	"third runner must be brought into play.",
 	"- After placing: roll again (risk) or end your turn.",
 	"- No legal move = BUST: this turn's progress is lost!",
 	"- Runner at the top + end turn = you claim the column,",
 	"then it is closed for everyone.",
-	"- First to own 3 columns wins.",
-	"Tip: right-click = main button, ESC = back to menu."
+	"- First to own 3 columns wins."
 }
 
 Function RowKey(plr, spalte)
@@ -752,7 +754,8 @@ Function ShowRules()
 
 	SetFont(#SANS, 22)
 	Local rules = strings[lang .. "_rules"]
-	Local y = 66
+
+	Local y = 60
 	Local gruen = True
 	For Local i = 0 To TableItems(rules) - 1
 		If rules[i] <> ""
@@ -765,7 +768,7 @@ Function ShowRules()
 			If gruen Then zeilenFarbe = #GREEN
 			TextOut(#CENTER, y, rules[i], {Align = #CENTER, Color = zeilenFarbe})
 		EndIf
-		y = y + 28
+		y = y + 25
 	Next
 
 	MakeButton(menuBackId, #SIMPLEBUTTON, 305, 495, 200, 40, {OnMouseUp = OnRulesBack})
@@ -912,6 +915,28 @@ EndFunction
 Function PairPlayable(summe1, summe2)
 	If summe1 = summe2 Then Return(ColPlayable(summe1))
 	Return(ColPlayable(summe1) Or ColPlayable(summe2))
+EndFunction
+
+Function PairOpensThirdRunner(summe1, summe2)
+	If tempMarker[summe1] = 0 And ColPlayable(summe1) Then Return(True)
+	If summe1 <> summe2 And tempMarker[summe2] = 0 And ColPlayable(summe2) Then Return(True)
+	Return(False)
+EndFunction
+
+Function MustOpenThirdRunner()
+	If CountTempCols() <> 2 Then Return(False)
+	For Local i = 0 To wurfAnzahl - 1
+		If PairPlayable(wurf[i].sum1, wurf[i].sum2) And PairOpensThirdRunner(wurf[i].sum1, wurf[i].sum2)
+			Return(True)
+		EndIf
+	Next
+	Return(False)
+EndFunction
+
+Function PairChoosable(summe1, summe2, forceThird)
+	If PairPlayable(summe1, summe2) = False Then Return(False)
+	If forceThird And PairOpensThirdRunner(summe1, summe2) = False Then Return(False)
+	Return(True)
 EndFunction
 
 Function PairNeedsChoice(summe1, summe2)
@@ -1181,8 +1206,9 @@ Function DoThrowDice()
 	BeginRefresh()
 	Local textY = pairListY
 	buttonCount = 0
+	Local forceThird = MustOpenThirdRunner()
 	For Local pairIdx = 0 To wurfAnzahl - 1
-		Local choosable = PairPlayable(wurf[pairIdx].sum1, wurf[pairIdx].sum2)
+		Local choosable = PairChoosable(wurf[pairIdx].sum1, wurf[pairIdx].sum2, forceThird)
 		Local textColor = #WHITE
 		If choosable = False Then textColor = #GRAY
 		SetFont(#SANS, 22)
@@ -1195,7 +1221,8 @@ Function DoThrowDice()
 			Local selBtnX = panelX + panelW - selBtnW
 			DrawButtonBg(selBtnX, textY, selBtnW, pairLineH, btnBlueBase, btnBlueLite)
 			SetFont(#SANS, 22)
-			BtnLabel(selBtnX, selBtnW, textY + 4, T("select"))
+
+			BtnLabel(selBtnX, selBtnW, textY + 1, T("select"))
 			MakeButton(btnId, #SIMPLEBUTTON, selBtnX, textY, selBtnW, pairLineH, {OnMouseUp = OnPairSelect})
 			buttonIds[buttonCount] = btnId
 			buttonCount = buttonCount + 1
@@ -1455,8 +1482,9 @@ Function AiPickPairIdx()
 
 	Local best = -1
 	Local bestScore = -1
+	Local forceThird = MustOpenThirdRunner()
 	For Local i = 0 To wurfAnzahl - 1
-		If PairPlayable(wurf[i].sum1, wurf[i].sum2)
+		If PairChoosable(wurf[i].sum1, wurf[i].sum2, forceThird)
 			Local sc = AiColValue(wurf[i].sum1) + AiColValue(wurf[i].sum2)
 			If sc > bestScore
 				bestScore = sc
@@ -1505,14 +1533,15 @@ Function DrawPairLine(pairIdx, farbe)
 EndFunction
 
 Function PairColor(pairIdx)
-	If PairPlayable(wurf[pairIdx].sum1, wurf[pairIdx].sum2) Then Return(#WHITE)
+	If PairChoosable(wurf[pairIdx].sum1, wurf[pairIdx].sum2, MustOpenThirdRunner()) Then Return(#WHITE)
 	Return(#GRAY)
 EndFunction
 
 Function AiThinkAnimation(pidx)
+	Local forceThird = MustOpenThirdRunner()
 	For Local runde = 1 To 2
 		For Local i = 0 To wurfAnzahl - 1
-			If PairPlayable(wurf[i].sum1, wurf[i].sum2)
+			If PairChoosable(wurf[i].sum1, wurf[i].sum2, forceThird)
 				DrawPairLine(i, #YELLOW)
 				Wait(10)
 				DrawPairLine(i, PairColor(i))
