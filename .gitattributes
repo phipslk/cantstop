@@ -1,0 +1,5 @@
+# GitHub's language detector (Linguist) doesn't recognise Hollywood (.hws),
+# so it was counting this one helper script and reporting the repo as
+# "100% Python" - excluding it from stats instead of mislabeling the
+# project. The game itself is written in Hollywood (see README.md).
+gen_felt_bg.py linguist-vendored
