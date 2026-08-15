@@ -18,6 +18,10 @@ KI-Erklaerung.md
 *.lha
 *.readme
 
+# Diskmag-Artikel bleiben lokal
+hollywood-ki-artikel.txt
+hollywood-spielsteine-artikel.txt
+
 # Build-Artefakte & Quell-Assets nur als Release-Assets, nicht im Source-Repo
 *.exe
 cantstop68k
