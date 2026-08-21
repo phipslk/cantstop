@@ -14,9 +14,9 @@ cantstop_dev.hws
 strip_comments.py
 KI-Erklaerung.md
 
-# Aminet-Packaging bleibt lokal, nicht auf GitHub
+# Aminet-Packaging: nur das gepackte Archiv bleibt lokal, nicht auf GitHub.
+# CantStop.readme + CantStop.readme.info sind dagegen im Repo (User-Wunsch).
 *.lha
-*.readme
 
 # Diskmag-Artikel bleiben lokal
 hollywood-ki-artikel.txt

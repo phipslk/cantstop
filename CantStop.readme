@@ -1,0 +1,97 @@
+Short:    Can't Stop dice board game clone
+Author:   Philipp Lonke
+Uploader: amiga@lonke.de (Philipp Lonke)
+Type:     game/board
+Version:  2.0
+Architecture: m68k-amigaos >= 3.0
+Requires: driver/audio/ahiusr_4.18.lha
+Kurz:     Klon des Wuerfelspiels Can't Stop
+
+Can't Stop 2.0
+==============
+
+A clone of Sid Sackson's classic push-your-luck dice board game
+"Can't Stop", written in Hollywood. One to four players (hotseat)
+race to the top of the board's columns - including computer
+opponents with a risk-aware AI.
+
+Be the first to claim three columns! Each turn you roll four dice,
+combine them into two pairs and advance up to three white runners
+on the columns 2-12. After every roll you may push your luck and
+roll again - or bank your progress and end the turn. If no pairing
+can be played, you BUST and lose everything gained this turn.
+
+
+Features
+--------
+
+- Official board layout (column lengths 3-5-7-9-11-13-11-9-7-5-3)
+  and the original pairing rules, including the obligation to move
+  both sums of a chosen pairing whenever possible
+- 1-4 players in any mix of humans and computer opponents
+- Computer AI that never banks while a runner is still free,
+  secures finished columns and otherwise stops based on the real
+  bust probability
+- Bust-risk indicator: the exact chance (in %) that your next
+  roll busts
+- German and English, switchable in the start menu
+- Pixel-art title screen, animated dice, flicker-free runner
+  sprites, dice-rattle and other sound effects in native 8SVX
+- Mouse-driven interface; right mouse button doubles as the main
+  action button, ESC returns to the menu
+
+
+Requirements
+------------
+
+- Amiga with 68020 CPU or better, AmigaOS 3.x
+- RTG graphics board (Picasso96 or CyberGraphX) required - the game
+  opens an 810 x 555 hi/truecolour screen and does NOT run on plain
+  AGA/ECS chipset modes
+- AHI audio system installed (see Requires)
+- Runs on real hardware and in emulation (WinUAE, AmiKit etc.)
+
+
+Installation
+------------
+
+Extract the archive anywhere and double-click the icon. Keep
+cantstop68k.info next to the program: apart from the MagicWB and
+OS3.5+ colour icon it carries the NOLEGACYAUDIO tooltype, which
+selects Hollywood's new AHI audio driver. Without it there is no
+sound in AHI-over-emulation setups such as AmiKit/WinUAE. When
+starting from a Shell, pass -nolegacyaudio instead.
+
+
+History
+-------
+
+2.0 (08-Aug-2026)  Selectable computer AI strength (easy/normal/strong,
+                   verified by simulation). Casino-felt playfield with a
+                   gold trim frame and reworked panel layout. Improved
+                   player colour contrast on the felt background. Program
+                   version shown on the rules screen. Fixed AI-generated
+                   artifacts on the title screen dice.
+1.0 (23-Jul-2026)  First public release.
+
+
+Credits
+-------
+
+Game design: Sid Sackson (Can't Stop, 1980).
+Programming and graphics: Philipp Lonke.
+Written in Hollywood (https://www.hollywood-mal.com/).
+Source and releases: https://github.com/phipslk/cantstop
+
+This game is freeware. Have fun - and know when to stop!
+
+
+Archive contents
+----------------
+
+CantStop.info             5950  Workbench drawer icon
+CantStop  (drawer)
+  CantStop           3781872  the game (Hollywood, 68020+, AmigaOS 3.x)
+  cantstop68k.info      7930  program icon (MagicWB + OS3.5 colour)
+  CantStop.readme        3480  this file
+  CantStop.readme.info   6703  Workbench icon for this file
