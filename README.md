@@ -3,6 +3,8 @@
 A clone of the classic push-your-luck dice game **Can't Stop**, written in
 [Hollywood](https://www.hollywood-mal.com/) (the Amiga multimedia language).
 
+**Repository:** <https://github.com/phipslk/cantstop>
+
 ## Features
 
 - 1–4 players, hotseat **plus computer opponents (AI)**
