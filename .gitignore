@@ -22,6 +22,10 @@ KI-Erklaerung.md
 hollywood-ki-artikel.txt
 hollywood-spielsteine-artikel.txt
 
+# Sicherheitskopien vor dem Ueberschreiben bleiben lokal liegen (z.B.
+# title.png.bak) - sie sollen erhalten bleiben, aber nicht ins Repo wandern.
+*.bak
+
 # Build-Artefakte & Quell-Assets nur als Release-Assets, nicht im Source-Repo
 *.exe
 cantstop68k

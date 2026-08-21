@@ -55,11 +55,21 @@ Next
 
 nr_player      = 2
 nr_human       = 1
+
+playerNames    = {}
+For nameInit = 1 To 4
+	playerNames[nameInit] = ""
+Next
+nameMaxWidth   = 160
 isComputer     = {}
 For aiInit = 1 To 4
 	isComputer[aiInit] = False
 Next
 aiThinking     = False
+
+quitRequested  = False
+quitHandled    = False
+animBusy       = False
 
 aiStrength     = 2
 
@@ -181,6 +191,12 @@ strings["de_qComputers"]  = "Computer-Gegner (0-"
 strings["en_qComputers"]  = "Computer opponents (0-"
 strings["de_maxInfo"]     = "Maximal 4 Spieler gesamt (Menschen + Computer)."
 strings["en_maxInfo"]     = "Maximum of 4 players in total (humans + computers)."
+strings["de_namesTitle"]  = "SPIELERNAMEN"
+strings["en_namesTitle"]  = "PLAYER NAMES"
+strings["de_namesInfo"]   = "Name eintippen und RETURN drücken."
+strings["en_namesInfo"]   = "Type a name and press RETURN."
+strings["de_namesInfo2"]  = "Leer lassen = Vorgabe behalten."
+strings["en_namesInfo2"]  = "Leave empty to keep the default."
 strings["de_qStrength"]   = "Spielstärke der Computer (1-3)?"
 strings["en_qStrength"]   = "Computer strength (1-3)?"
 strings["de_strengthInfo"] = "1 = leicht, 2 = normal, 3 = stark"
@@ -274,6 +290,12 @@ Function T(key$)
 	Return(strings[lang .. "_" .. key$])
 EndFunction
 
+Function PlayerName(plr)
+	If playerNames[plr] <> "" Then Return(playerNames[plr])
+	If isComputer[plr] Then Return(T("computer") .. ToString(plr))
+	Return(T("player") .. ToString(plr))
+EndFunction
+
 Function ColToIdx(spalte)
 	Return(spalte - 2)
 EndFunction
@@ -336,11 +358,19 @@ Function BtnLabel(bx, bw, ty, label$)
 EndFunction
 
 Function ShowEndTurnButton()
-	If endTurnActive = False
-		MakeButton(endBtnId, #SIMPLEBUTTON, endBtnX, endBtnY, endBtnW, endBtnH, {OnMouseUp = OnEndTurn})
-		endTurnActive = True
+	If CountTempCols() = 3
+		If endTurnActive = False
+			MakeButton(endBtnId, #SIMPLEBUTTON, endBtnX, endBtnY, endBtnW, endBtnH, {OnMouseUp = OnEndTurn})
+			endTurnActive = True
+		EndIf
+		DrawButtonBg(endBtnX, endBtnY, endBtnW, endBtnH, btnRedBase, btnRedLite)
+	Else
+		If endTurnActive
+			DeleteButton(endBtnId)
+			endTurnActive = False
+		EndIf
+		DrawButtonBg(endBtnX, endBtnY, endBtnW, endBtnH, #GRAY, #GRAY)
 	EndIf
-	DrawButtonBg(endBtnX, endBtnY, endBtnW, endBtnH, btnRedBase, btnRedLite)
 	SetFont(#SANS, 22)
 	BtnLabel(endBtnX, endBtnW, endBtnY + 7, T("bEndTurn"))
 EndFunction
@@ -588,9 +618,7 @@ Function ShowScore(startzeile)
 		For Local spalte = 2 To 12
 			If colOwner[spalte] = plr Then wonCount = wonCount + 1
 		Next
-		Local wer$ = T("player")
-		If isComputer[plr] Then wer$ = T("computer")
-		TextOut(panelX, textY, wer$ .. ToString(plr) .. ":", {Color = spielerFarben[plr]})
+		TextOut(panelX, textY, PlayerName(plr) .. ":", {Color = spielerFarben[plr]})
 		TextOut(panelX + 170, textY, ToString(wonCount) .. " / 3", {Color = spielerFarben[plr]})
 		textY = textY + 22
 	Next
@@ -598,9 +626,7 @@ EndFunction
 
 Function ShowPlayerHeader()
 	SetFont(#SANS, 22)
-	Local wer$ = T("player")
-	If isComputer[currentPl] Then wer$ = T("computer")
-	TextOut(panelX, 22, wer$ .. ToString(currentPl), {Color = spielerFarben[currentPl]})
+	TextOut(panelX, 22, PlayerName(currentPl), {Color = spielerFarben[currentPl]})
 	SetFillStyle(#FILLCOLOR)
 	SetFormStyle(#BORDER, #WHITE, 1)
 	Box(panelX + 172, 23, 22, 22, spielerFarben[currentPl])
@@ -681,7 +707,57 @@ Function AskPlayers()
 	For Local plr = 1 To nr_player
 		isComputer[plr] = (plr > nr_human)
 	Next
+	AskNames()
 	asking = False
+EndFunction
+
+Function AskNames()
+
+	For Local plr = 1 To 4
+		playerNames[plr] = ""
+	Next
+
+	SetFillStyle(#FILLCOLOR)
+	SetFormStyle(#BORDER, #BLACK, 1)
+	Box(0, 0, 810, 555, #BLACK)
+
+	SetFont(#SANS, 30)
+	TextOut(#CENTER, 60, T("namesTitle"), {Align = #CENTER, Color = #YELLOW})
+	SetFont(#SANS, 22)
+	TextOut(#CENTER, 118, T("namesInfo"), {Align = #CENTER, Color = #GRAY})
+	TextOut(#CENTER, 146, T("namesInfo2"), {Align = #CENTER, Color = #GRAY})
+
+	Local labelX = 150
+	Local inputX = 430
+	Local rowY   = 210
+	Local rowH   = 62
+
+	For Local plr = 1 To nr_human
+		TextOut(labelX, rowY + (plr - 1) * rowH, PlayerName(plr) .. ":", {Color = spielerFarben[plr]})
+	Next
+
+	For Local plr = 1 To nr_human
+		Local y = rowY + (plr - 1) * rowH
+
+		TextOut(inputX - 26, y, ">", {Color = #YELLOW})
+		Locate(inputX, y)
+		Local eingabe$ = InKeyStr(#ALL, 0, False, True)
+		eingabe$ = TrimStr(eingabe$, " ", False)
+		eingabe$ = TrimStr(eingabe$, " ", True)
+		If eingabe$ <> ""
+
+			SetFont(#SANS, 22)
+			While StrLen(eingabe$) > 1 And TextWidth(eingabe$ .. ":") > nameMaxWidth
+				eingabe$ = LeftStr(eingabe$, StrLen(eingabe$) - 1)
+			Wend
+			playerNames[plr] = eingabe$
+		EndIf
+
+		Box(0, y - 4, 810, 34, #BLACK)
+		TextOut(#CENTER, y, PlayerName(plr), {Align = #CENTER, Color = spielerFarben[plr]})
+	Next
+
+	Wait(30)
 EndFunction
 
 Function HideMenuButtons()
@@ -1130,15 +1206,33 @@ Function DrawFourDice(w1, w2, w3, w4)
 	DrawDie(panelX + gap * 3, dy, s, w4)
 EndFunction
 
+Function WaitInterruptible(ticks)
+	Local slices = ticks / 2
+	If slices < 1 Then slices = 1
+	For Local i = 1 To slices
+		Wait(2)
+		CheckEvents()
+		If quitRequested Then Return(True)
+	Next
+	Return(False)
+EndFunction
+
 Function RollDiceAnimation(w1, w2, w3, w4)
 	PlaySample(sndDice, {Times = 0})
+	animBusy = True
 
 	For Local frame = 1 To 15
 		DrawFourDice(Rnd(6) + 1, Rnd(6) + 1, Rnd(6) + 1, Rnd(6) + 1)
-		Wait(2 + frame / 2)
+
+		If WaitInterruptible(2 + frame / 2)
+			StopSample(sndDice)
+			animBusy = False
+			Return
+		EndIf
 	Next
 	DrawFourDice(w1, w2, w3, w4)
 	StopSample(sndDice)
+	animBusy = False
 EndFunction
 
 Function DoThrowDice()
@@ -1184,6 +1278,8 @@ Function DoThrowDice()
 	HideEndTurnButton()
 	EndRefresh()
 	RollDiceAnimation(wuerfel1, wuerfel2, wuerfel3, wuerfel4)
+
+	If CheckQuitRequest() Then Return
 
 	If anyPlayable = False
 		PlaySample(sndBust)
@@ -1322,6 +1418,10 @@ Function StartGame()
 	selectedIdx   = -1
 	choicePending = False
 	aiThinking    = False
+
+	quitRequested = False
+	quitHandled   = False
+	animBusy      = False
 	InitPlayers()
 	phase = "spielen"
 
@@ -1353,7 +1453,11 @@ EndFunction
 
 Function OnGlobalKey(msg)
 	If msg.key <> "ESC" Then Return
-	If aiThinking Or asking Then Return
+	If asking Then Return
+	If aiThinking Or animBusy
+		quitRequested = True
+		Return
+	EndIf
 	If phase = "menu"
 		End()
 	ElseIf phase = "regeln"
@@ -1367,6 +1471,7 @@ Function OnEndTurn(msg)
 	If aiThinking Then Return
 	If phase <> "spielen" Then Return
 	If choicePending Then Return
+	If CountTempCols() <> 3 Then Return
 	FinishTurn()
 EndFunction
 
@@ -1383,9 +1488,7 @@ Function FinishTurn()
 		HidePrimaryButton()
 		ClearPanel()
 		SetFont(#SANS, 22)
-		Local sieger$ = T("player")
-		If isComputer[winner] Then sieger$ = T("computer")
-		TextOut(panelX, 290, sieger$ .. ToString(winner), {Color = spielerFarben[winner]})
+		TextOut(panelX, 290, PlayerName(winner), {Color = spielerFarben[winner]})
 		TextOut(panelX, 322, T("wins"), {Color = spielerFarben[winner]})
 		ShowWinButtons()
 		phase = "ende"
@@ -1543,13 +1646,13 @@ Function AiThinkAnimation(pidx)
 		For Local i = 0 To wurfAnzahl - 1
 			If PairChoosable(wurf[i].sum1, wurf[i].sum2, forceThird)
 				DrawPairLine(i, #YELLOW)
-				Wait(10)
+				If WaitInterruptible(10) Then Return
 				DrawPairLine(i, PairColor(i))
 			EndIf
 		Next
 	Next
 	DrawPairLine(pidx, #YELLOW)
-	Wait(20)
+	WaitInterruptible(20)
 EndFunction
 
 Function AiApplyPair(pidx)
@@ -1568,21 +1671,38 @@ Function AiApplyPair(pidx)
 	DrawPairLine(pidx, #YELLOW)
 EndFunction
 
+Function CheckQuitRequest()
+	If quitRequested = False Then Return(False)
+
+	If quitHandled = False
+		quitHandled = True
+		aiThinking  = False
+		animBusy    = False
+		LeaveToMenu()
+	EndIf
+	Return(True)
+EndFunction
+
 Function PlayComputerTurn()
 	aiThinking = True
 	Repeat
-		Wait(25)
+		WaitInterruptible(25)
+		If CheckQuitRequest() Then Return
 		DoThrowDice()
+		If CheckQuitRequest() Then Return
 		If phase = "bust"
-			Wait(60)
+			WaitInterruptible(60)
+			If CheckQuitRequest() Then Return
 			aiThinking = False
 			NextPlayer()
 			Return
 		EndIf
 		Local pidx = AiPickPairIdx()
 		AiThinkAnimation(pidx)
+		If CheckQuitRequest() Then Return
 		AiApplyPair(pidx)
-		Wait(45)
+		WaitInterruptible(45)
+		If CheckQuitRequest() Then Return
 		If AiShouldStop()
 			aiThinking = False
 			FinishTurn()
