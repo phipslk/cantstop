@@ -151,8 +151,9 @@ menuFullX      = 295
 menuFullY      = 520
 menuFullW      = 220
 menuFullH      = 30
-gameFullX      = 0
-gameFullY      = 524
+
+gameFullX      = 13
+gameFullY      = 515
 gameFullH      = 26
 gameFullClearW = 200
 @ENDIF
